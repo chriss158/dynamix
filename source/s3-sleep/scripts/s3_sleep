@@ -343,39 +343,44 @@ SSH_activity() {
 
 tvheadend_activity()
 {
-  result=
   if [[ $tvheadendCheckActivity == yes ]]; then
       subscriptions=$(curl --max-time 180 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort/api/status/subscriptions")
       if [ "$?" != 0 ]; then
-        return
+        result="Cannot connect to TVHeadend"
+        echo $result
+        return 0
       fi
 
       IFS=$'\n' subscription_titles+=($(echo $subscriptions | jq -r ".entries[] | .title" ))
+      log "Subs '$subscription_titles'"
       for subscription_title in "${subscription_titles[@]}"; do
           if [ "$subscription_title" != "epggrab" ] || [ "${tvheadendConsiderEPGGrabbing:-yes}" = yes ]; then
-              log "Tvheadend has subscription: '$subscription_title', auto suspend terminated"
-              result=1
+              result="Tvheadend has subscription: '$subscription_title', auto suspend terminated"
               echo $result
-              return
+              return 1
           fi
       done
 
       tvheadend_dvr_upcoming=$(curl --max-time 180 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
       if [ "$?" != 0 ]; then
-        return
+        result="Cannot connect to TVHeadend"
+        echo $result
+        return 0
       fi
       start_date=$(echo $tvheadend_dvr_upcoming | jq -r ".entries[] | .start_real")
       if [ -n "$start_date" ]; then
         now=$(date +%s)
         let delta=(start_date - now)/60
         if [ "$delta" -le "${tvheadendIdleMinutesBeforeRecording:-15}" ] ; then
-            log "Tvheadend recording starts in $delta minutes, auto suspend terminated"
-            result=1
+            result="Tvheadend recording starts in $delta minutes, auto suspend terminated"
             echo $result
-            return
+            return 1
         fi
       fi
   fi
+  result=""
+  echo $result
+  return 0
 }
 
 tvheadend_wake_up_time() {
@@ -384,7 +389,9 @@ tvheadend_wake_up_time() {
     activities=()
     tvheadend_dvr_upcoming=$(curl --max-time 180 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
     if [ "$?" != 0 ]; then
-      return 1
+        result="Cannot connect to TVHeadend"
+        echo $result
+        return 0
     fi
     IFS=$'\n' activities+=($(echo $tvheadend_dvr_upcoming | jq -r ".entries[] | \"Tvheadend schedule:\" + (.start_real | tostring) + \":\" + .channelname + \" - \" + .disp_title + if (.disp_subtitle | length > 0) then \" (\" + .disp_subtitle + \")\" else \"\" end"))
 
@@ -405,10 +412,9 @@ tvheadend_wake_up_time() {
             if [ "$timestamp" -gt "$now" ]
             then
                 wake_date=$(($timestamp - ${tvheadendBootDelaySeconds:-180}))
-                log "Next activity at $message"
-                log "Set wakeup time to"
-                echo "$(/usr/sbin/rtcwake -m no -t $wake_date)"
-                return
+                result="Next activity at $message. Set wakeup time to $(echo "$(/usr/sbin/rtcwake -m no -t $wake_date))"
+                echo $result
+                return 0
             fi
         done
     fi
@@ -449,7 +455,8 @@ post_sleep_activity() {
 }
 
 system_sleep() {
-  tvheadend_wake_up_time
+  tvh_wake_result=$(tvheadend_wake_up_time); tvh_wake_rc=$?
+  log "TVH Wake up result: '$tvh_wake_result'"
 
 # Do pre-sleep activities
   pre_sleep_activity
@@ -462,7 +469,8 @@ system_sleep() {
 }
 
 system_down() {
-  tvheadend_wake_up_time
+  tvh_wake_result=$(tvheadend_wake_up_time); tvh_wake_rc=$?
+  log "TVH Wake up result: '$tvh_wake_result'"
 
   log "Shutdown system now"
 # Perform a 'clean' powerdown
@@ -508,7 +516,7 @@ check network activity=$checkTCP
 check active devices=$devices
 check local login=$checkTTY
 check remote login=$checkSSH
-check TVHeadend busy=$tvheadendCheckBusy
+check TVHeadend busy=$tvheadendCheckActivity
 version=$version
 ----------------------------------------------
 included disks=${array[@]}
@@ -570,7 +578,9 @@ while [[ -f $lockfile ]]; do
         start=$(txrx_bytes)
       else
         log "Check TVHeadend activity"
-        if [ -z $(tvheadend_activity) ]; then
+        tvh_result=$(tvheadend_activity); tvh_rc=$?
+        log "Activity result: '$tvh_result'"
+        if [[ $tvh_result -eq 0 ]]; then
           log "Check TCP/SSH/TTY/IP activity"
           if [[ -z $(TCP_activity) && -z $(SSH_activity) && -z $(TTY_activity) && -z $(IP_activity) ]]; then
             log "Communication state is idle"
