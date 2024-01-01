@@ -43,10 +43,11 @@
 #                 Take into account custom port numbers of telnet and ssh
 # Version 3.0.11  Use sdspin to monitor disks (provided by Doron)
 # Version 3.0.12  Add wake up for TVHeadend recordings
+# Version 3.0.13  Add check for TVHeadend activity
 #
 # Bergware International
 ####################################################################################
-version=3.0.12
+version=3.0.13
 program=$(basename $0)
 ini=/var/local/emhttp/disks.ini
 
@@ -88,7 +89,7 @@ fi
 
 usage() {
  echo
- echo "Usage: $program [-acnRFSLlVqW] [-f type] [-I disk] [-N idle] [-i ip] [-d day] [-h hour] [-m time] [-t time] [-e eth] [-w wol] [-b name] [-p name] [-C case] [-D 0-4] [-ED] [-H tvheadend ip] [-E tvheadend port] [-A tvheadend user] [-P tvheadend password] [-Y tvheadend boot delay]"
+ echo "Usage: $program [-acnRFSLlVqWTG] [-f type] [-I disk] [-N idle] [-i ip] [-d day] [-h hour] [-m time] [-t time] [-e eth] [-w wol] [-b name] [-p name] [-C case] [-D 0-4] [-ED] [-H tvheadend ip] [-E tvheadend port] [-A tvheadend user] [-P tvheadend password] [-Y tvheadend boot delay] [-M tvheadend idle minutes]"
  echo " -a                wait for array inactivity"
  echo " -c                exclude cache drive from array monitoring"
  echo " -W                Wake up for TVHeadend recordings"
@@ -97,6 +98,9 @@ usage() {
  echo " -A user           TVHeadend User"
  echo " -P password       TVHeadend Password"
  echo " -Y boot delay     TVHeadend Boot delay"
+ echo " -T                TVHeadend check activity"
+ echo " -M idle minutes   TVHeadend idle minutes before recording"
+ echo " -G                TVHeadend consider EPG grabbing"
  echo " -f type           1 = device status monitoring only, 2 = device counters monitoring only"
  echo " -I disk           include outside of array disk (may be repeated for other disks)"
  echo " -n                wait for network inactivity"
@@ -168,9 +172,12 @@ tvheadendUser=
 tvheadendPassword=
 tvheadendWakeupRec=no
 tvheadendBootDelaySeconds=180
+tvheadendCheckActivity=no
+tvheadendIdleMinutesBeforeRecording=15
+tvheadendConsiderEPGGrabbing=no
 
 # options to overwrite defaults
-while getopts "acnWN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:H:E:A:P:Y:" opt; do
+while getopts "acnWTGN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:H:E:A:P:Y:M:" opt; do
   case $opt in
     a) checkHDD=yes ;;
     c) checkCache=no ;;
@@ -200,6 +207,9 @@ while getopts "acnWN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:H:E:A:P:Y:" opt; do
     A) tvheadendUser=$OPTARG ;;
     P) tvheadendPassword=$OPTARG ;;
     Y) tvheadendBootDelaySeconds=$OPTARG ;;
+    T) tvheadendCheckActivity=yes;;
+    M) tvheadendIdleMinutesBeforeRecording=$OPTARG ;;
+    G) tvheadendConsiderEPGGrabbing=yes;;
     b) preRun=$OPTARG ;;
     p) postRun=$OPTARG ;;
     D) debug=$OPTARG ;;
@@ -328,6 +338,43 @@ SSH_activity() {
   if [[ -n $result ]]; then
     log "Remote activity on going: telnet/ssh"
     echo $result
+  fi
+}
+
+tvheadend_activity()
+{
+  result=
+  if [[ $tvheadendCheckActivity == yes ]]; then
+      subscriptions=$(curl --max-time 180 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort/api/status/subscriptions")
+      if [ "$?" != 0 ]; then
+        return
+      fi
+
+      IFS=$'\n' subscription_titles+=($(echo $subscriptions | jq -r ".entries[] | .title" ))
+      for subscription_title in "${subscription_titles[@]}"; do
+          if [ "$subscription_title" != "epggrab" ] || [ "${tvheadendConsiderEPGGrabbing:-yes}" = yes ]; then
+              log "Tvheadend has subscription: '$subscription_title', auto suspend terminated"
+              result=1
+              echo $result
+              return
+          fi
+      done
+
+      tvheadend_dvr_upcoming=$(curl --max-time 180 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
+      if [ "$?" != 0 ]; then
+        return
+      fi
+      start_date=$(echo $tvheadend_dvr_upcoming | jq -r ".entries[] | .start_real")
+      if [ -n "$start_date" ]; then
+        now=$(date +%s)
+        let delta=(start_date - now)/60
+        if [ "$delta" -le "${tvheadendIdleMinutesBeforeRecording:-15}" ] ; then
+            log "Tvheadend recording starts in $delta minutes, auto suspend terminated"
+            result=1
+            echo $result
+            return
+        fi
+      fi
   fi
 }
 
@@ -461,6 +508,7 @@ check network activity=$checkTCP
 check active devices=$devices
 check local login=$checkTTY
 check remote login=$checkSSH
+check TVHeadend busy=$tvheadendCheckBusy
 version=$version
 ----------------------------------------------
 included disks=${array[@]}
@@ -521,13 +569,16 @@ while [[ -f $lockfile ]]; do
         log "Initialize TCP activity counter"
         start=$(txrx_bytes)
       else
-        log "Check TCP/SSH/TTY/IP activity"
-        if [[ -z $(TCP_activity) && -z $(SSH_activity) && -z $(TTY_activity) && -z $(IP_activity) ]]; then
-          log "Communication state is idle"
-          [[ $action == sleep ]] && system_sleep || system_down
-          log "System woken-up. Reset timers"
-          extraDelay=$delayInit
-          [[ $checkTCP == yes ]] && start=0 || start=-1
+        log "Check TVHeadend activity"
+        if [ -z $(tvheadend_activity) ]; then
+          log "Check TCP/SSH/TTY/IP activity"
+          if [[ -z $(TCP_activity) && -z $(SSH_activity) && -z $(TTY_activity) && -z $(IP_activity) ]]; then
+            log "Communication state is idle"
+            [[ $action == sleep ]] && system_sleep || system_down
+            log "System woken-up. Reset timers"
+            extraDelay=$delayInit
+            [[ $checkTCP == yes ]] && start=0 || start=-1
+          fi
         fi
         [[ $start -gt 0 ]] && start=$(txrx_bytes)
       fi

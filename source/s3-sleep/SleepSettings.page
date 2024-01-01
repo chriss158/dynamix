@@ -108,7 +108,7 @@ $(function() {
 <input type="hidden" name="#file" value="<?=$plugin?>/<?=$plugin?>.cfg">
 <input type="hidden" name="#include" value="plugins/<?=$plugin?>/include/update.sleep.php">
 <input type="hidden" name="#config" value="<?=$config?>">
-<input type="hidden" name="#prefix" value="timeout=m&port=e&idle=N&pingIP=i&stopHour=h&stopDay=d&setWol=w&debug=D&outside=I&tvheadendIp=H&tvheadendPort=E&tvheadendUser=A&tvheadendPassword=P&tvheadendBootDelaySeconds=Y">
+<input type="hidden" name="#prefix" value="timeout=m&port=e&idle=N&pingIP=i&stopHour=h&stopDay=d&setWol=w&debug=D&outside=I&tvheadendIp=H&tvheadendPort=E&tvheadendUser=A&tvheadendPassword=P&tvheadendBootDelaySeconds=Y&tvheadendIdleMinutesBeforeRecording=M">
 <input type="hidden" name="#folder" value="<?=$scripts?>">
 <span class="bitstream" style="float:right;margin-right:12px"><?=exec("$scripts/s3_sleep -V")?></span>
 
@@ -300,6 +300,40 @@ _(DHCP renewal after wake-up)_:
 > Leave this default OFF, in case the system doesn't start properly after wake-up, see if forcing this setting helps.
 :end
 
+_(Check TVHeadend activity)_:
+: <select name="tvheadendCheckActivity">
+  <?=mk_option($cfg['tvheadendCheckActivity'], "", _("No"))?>
+  <?=mk_option($cfg['tvheadendCheckActivity'], "-T", _("Yes"))?>
+  </select>
+
+:s3sleep_tvhactivity_plug:
+> Set this to ON, if you want to check if TVHeadend is currently recording/EPG grabbing
+:end
+
+_(TVHeadend idle minutes before recording)_:
+: <input type="text" name="tvheadendIdleMinutesBeforeRecording" maxlength="2" value="<?=$cfg['tvheadendIdleMinutesBeforeRecording']?>" class="narrow" placeholder="15">
+
+:s3sleep_tvhidleminutes_plug:
+> Autosuspension will be aborted if a recording is upcoming within the given
+> duration (unit: minutes). Default: 15 minutes
+>
+> The duration of this value (given in minutes) should be greater than the
+> duration of "TVHeadend Boot Delay Seconds" (given in seconds), because otherwise
+> the machine is allowed to shutdown even if it cannot wake up in time.
+:end
+
+_(TVHeadend consider EPG grabbing)_:
+: <select name="tvheadendConsiderEPGGrabbing">
+  <?=mk_option($cfg['tvheadendConsiderEPGGrabbing'], "", _("No"))?>
+  <?=mk_option($cfg['tvheadendConsiderEPGGrabbing'], "-G", _("Yes"))?>
+  </select>
+
+:s3sleep_tvhconsiderepg_plug:
+> Consider over-the-air EPG grabbing as an activity that prevents suspend?
+> If set to 'No', and if the only activity is
+> over-the-air EPG grabbing, the machine will be suspended.
+:end
+
 _(Wake up for TVHeadend recordings)_:
 : <select name="tvheadendWakeupRec">
   <?=mk_option($cfg['tvheadendWakeupRec'], "", _("No"))?>
@@ -308,6 +342,13 @@ _(Wake up for TVHeadend recordings)_:
 
 :s3sleep_tvhwakeup_plug:
 > Set this to ON, if you want to wake up the server if there are recordings in TVHeadend.
+:end
+
+_(TVHeadend Boot Delay Seconds)_:
+: <input type="text" name="tvheadendBootDelaySeconds" maxlength="5" value="<?=$cfg['tvheadendBootDelaySeconds']?>" class="narrow" placeholder="180">
+
+:s3sleep_tvhbd_plug:
+> Boot duration of the machine. Used to wake the machine timely before the next recording.
 :end
 
 _(TVHeadend IP)_:
@@ -332,17 +373,10 @@ _(TVHeadend Username)_:
 :end
 
 _(TVHeadend Password)_:
-: <input type="text" name="tvheadendPassword" maxlength="200" value="<?=$cfg['tvheadendPassword']?>" class="narrow">
+: <input type="password" name="tvheadendPassword" maxlength="200" value="<?=$cfg['tvheadendPassword']?>" class="narrow">
 
 :s3sleep_tvhpassword_plug:
 > Set TVHeadend Password.
-:end
-
-_(TVHeadend Boot Delay Seconds)_:
-: <input type="text" name="tvheadendBootDelaySeconds" maxlength="200" value="<?=$cfg['tvheadendBootDelaySeconds']?>" class="narrow" placeholder="180">
-
-:s3sleep_tvhbd_plug:
-> Boot duration of the machine. Used to wake the machine timely before the next recording.
 :end
 
 _(Enable DEBUG mode)_:
