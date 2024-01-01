@@ -352,7 +352,6 @@ tvheadend_activity()
       fi
 
       IFS=$'\n' subscription_titles+=($(echo $subscriptions | jq -r ".entries[] | .title" ))
-      log "Subs '$subscription_titles'"
       for subscription_title in "${subscription_titles[@]}"; do
           if [ "$subscription_title" != "epggrab" ] || [ "${tvheadendConsiderEPGGrabbing:-yes}" = yes ]; then
               result="Tvheadend has subscription: '$subscription_title', auto suspend terminated"
