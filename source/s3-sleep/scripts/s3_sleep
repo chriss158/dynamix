@@ -367,7 +367,7 @@ tvheadend_activity()
         echo $result
         return 0
       fi
-      start_date=$(echo $tvheadend_dvr_upcoming | jq -r ".entries[] | .start_real")
+      start_date=$(echo $tvheadend_dvr_upcoming | jq -r ".entries[0] | .start_real")
       if [ -n "$start_date" ]; then
         now=$(date +%s)
         let delta=(start_date - now)/60
@@ -412,7 +412,8 @@ tvheadend_wake_up_time() {
             if [ "$timestamp" -gt "$now" ]
             then
                 wake_date=$(($timestamp - ${tvheadendBootDelaySeconds:-180}))
-                result="Next activity at $message. Set wakeup time to $(echo "$(/usr/sbin/rtcwake -m no -t $wake_date))"
+                rtc_out=$(echo "$(/usr/sbin/rtcwake -m no -t $wake_date)")
+                result="Next activity at $message. Set wakeup time to\n$rtc_out"
                 echo $result
                 return 0
             fi
