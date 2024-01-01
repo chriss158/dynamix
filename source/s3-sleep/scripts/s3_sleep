@@ -332,7 +332,7 @@ SSH_activity() {
 }
 
 tvheadend_wake_up_time() {
-  if [ "${tvheadendWakeupRec:-no}" == 'yes' ] ; then
+  if [ "${tvheadendWakeupRec:-no}" == yes ] ; then
     echo 0 > /sys/class/rtc/rtc0/wakealarm
     activities=()
     tvheadend_dvr_upcoming=$(curl --max-time 180 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
