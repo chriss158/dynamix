@@ -581,7 +581,7 @@ while [[ -f $lockfile ]]; do
         log "Check TVHeadend activity"
         tvh_result=$(tvheadend_activity); tvh_rc=$?
         log "Activity result: '$tvh_result'"
-        if [[ $tvh_result -eq 0 ]]; then
+        if [[ $tvh_rc -eq 0 ]]; then
           log "Check TCP/SSH/TTY/IP activity"
           if [[ -z $(TCP_activity) && -z $(SSH_activity) && -z $(TTY_activity) && -z $(IP_activity) ]]; then
             log "Communication state is idle"
