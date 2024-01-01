@@ -108,7 +108,7 @@ $(function() {
 <input type="hidden" name="#file" value="<?=$plugin?>/<?=$plugin?>.cfg">
 <input type="hidden" name="#include" value="plugins/<?=$plugin?>/include/update.sleep.php">
 <input type="hidden" name="#config" value="<?=$config?>">
-<input type="hidden" name="#prefix" value="timeout=m&port=e&idle=N&pingIP=i&stopHour=h&stopDay=d&setWol=w&debug=D&outside=I">
+<input type="hidden" name="#prefix" value="timeout=m&port=e&idle=N&pingIP=i&stopHour=h&stopDay=d&setWol=w&debug=D&outside=I&tvheadendWakeupRec=W&tvheadendIp=H&tvheadendPort=E&tvheadendUser=A&tvheadendPassword=P&tvheadendBootDelaySeconds=Y">
 <input type="hidden" name="#folder" value="<?=$scripts?>">
 <span class="bitstream" style="float:right;margin-right:12px"><?=exec("$scripts/s3_sleep -V")?></span>
 
@@ -298,6 +298,51 @@ _(DHCP renewal after wake-up)_:
 
 :s3sleep_dhcp_plug:
 > Leave this default OFF, in case the system doesn't start properly after wake-up, see if forcing this setting helps.
+:end
+
+_(Wake up for TVHeadend recordings)_:
+: <select name="tvheadendWakeupRec">
+  <?=mk_option($cfg['tvheadendWakeupRec'], "", _("No"))?>
+  <?=mk_option($cfg['tvheadendWakeupRec'], "-W", _("Yes"))?>
+  </select>
+
+:s3sleep_tvhwakeup_plug:
+> Set this to ON, if you want to wake up the server if there are recordings in TVHeadend.
+:end
+
+_(TVHeadend IP)_:
+: <input type="text" name="tvheadendIp" maxlength="15" value="<?=$cfg['tvheadendIp']?>" class="narrow" placeholder="127.0.0.1">
+
+:s3sleep_tvhip_plug:
+> Set TVHeadend IP.
+:end
+
+_(TVHeadend Port)_:
+: <input type="text" name="tvheadendPort" maxlength="6" value="<?=$cfg['tvheadendPort']?>" class="narrow" placeholder="9981">
+
+:s3sleep_tvhport_plug:
+> Set TVHeadend Port.
+:end
+
+_(TVHeadend Username)_:
+: <input type="text" name="tvheadendUser" maxlength="200" value="<?=$cfg['tvheadendUser']?>" class="narrow">
+
+:s3sleep_tvhuser_plug:
+> Set TVHeadend User.
+:end
+
+_(TVHeadend Password)_:
+: <input type="text" name="tvheadendPassword" maxlength="200" value="<?=$cfg['tvheadendPassword']?>" class="narrow">
+
+:s3sleep_tvhpassword_plug:
+> Set TVHeadend Password.
+:end
+
+_(TVHeadend Boot Delay Seconds)_:
+: <input type="text" name="tvheadendBootDelaySeconds" maxlength="200" value="<?=$cfg['tvheadendBootDelaySeconds']?>" class="narrow" placeholder="180">
+
+:s3sleep_tvhbd_plug:
+> Boot duration of the machine. Used to wake the machine timely before the next recording.
 :end
 
 _(Enable DEBUG mode)_:

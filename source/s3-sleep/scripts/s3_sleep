@@ -42,10 +42,11 @@
 # Version 3.0.10  Fix list of devices outside array
 #                 Take into account custom port numbers of telnet and ssh
 # Version 3.0.11  Use sdspin to monitor disks (provided by Doron)
+# Version 3.0.12  Add wake up for TVHeadend recordings
 #
 # Bergware International
 ####################################################################################
-version=3.0.11
+version=3.0.12
 program=$(basename $0)
 ini=/var/local/emhttp/disks.ini
 
@@ -87,32 +88,38 @@ fi
 
 usage() {
  echo
- echo "Usage: $program [-acnRFSLlVq] [-f type] [-I disk] [-N idle] [-i ip] [-d day] [-h hour] [-m time] [-t time] [-e eth] [-w wol] [-b name] [-p name] [-C case] [-D 0-4] [-ED]"
- echo " -a          wait for array inactivity"
- echo " -c          exclude cache drive from array monitoring"
- echo " -f type     1 = device status monitoring only, 2 = device counters monitoring only"
- echo " -I disk     include outside of array disk (may be repeated for other disks)"
- echo " -n          wait for network inactivity"
- echo " -N idle     set TCP idle threshold"
- echo " -R          do DHCP renewal after wake-up"
- echo " -F          force gigabit speed after wake-up"
- echo " -S          sleep NOW"
- echo " -i ip       IP address to ping (may be repeated as many times as desired)"
- echo " -L          check remotely logged in users (SSH)"
- echo " -l          check locally logged in users"
- echo " -d day      Excluded day (may be repeated as many times as desired)"
- echo " -h hour     Excluded hour (may be repeated as many times as desired)"
- echo " -m time     extra delay after array inactivity"
- echo " -t time     interval of network / device inactivity"
- echo " -e eth      select interface to monitor"
- echo " -w wol      set WOL options before sleep"
- echo " -b name     execute shell script 'name' before sleep"
- echo " -p name     execute shell script 'name' after wake-up"
- echo " -C case     execute case (1) sleep or (2) shutdown"
- echo " -D 0-4      set debug reporting (0-4)"
- echo " -ED         print drives outside of array and exit"
- echo " -V          print program version and exit"
- echo " -q          terminate running background instance of s3_sleep"
+ echo "Usage: $program [-acnRFSLlVqW] [-f type] [-I disk] [-N idle] [-i ip] [-d day] [-h hour] [-m time] [-t time] [-e eth] [-w wol] [-b name] [-p name] [-C case] [-D 0-4] [-ED] [-H tvheadend ip] [-E tvheadend port] [-A tvheadend user] [-P tvheadend password] [-Y tvheadend boot delay]"
+ echo " -a                wait for array inactivity"
+ echo " -c                exclude cache drive from array monitoring"
+ echo " -W                Wake up for TVHeadend recordings"
+ echo " -H ip             TVHeadend IP"
+ echo " -E port           TVHeadend Port"
+ echo " -A user           TVHeadend User"
+ echo " -P password       TVHeadend Password"
+ echo " -Y boot delay     TVHeadend Boot delay"
+ echo " -f type           1 = device status monitoring only, 2 = device counters monitoring only"
+ echo " -I disk           include outside of array disk (may be repeated for other disks)"
+ echo " -n                wait for network inactivity"
+ echo " -N idle           set TCP idle threshold"
+ echo " -R                do DHCP renewal after wake-up"
+ echo " -F                force gigabit speed after wake-up"
+ echo " -S                sleep NOW"
+ echo " -i ip             IP address to ping (may be repeated as many times as desired)"
+ echo " -L                check remotely logged in users (SSH)"
+ echo " -l                check locally logged in users"
+ echo " -d day            Excluded day (may be repeated as many times as desired)"
+ echo " -h hour           Excluded hour (may be repeated as many times as desired)"
+ echo " -m time           extra delay after array inactivity"
+ echo " -t time           interval of network / device inactivity"
+ echo " -e eth            select interface to monitor"
+ echo " -w wol            set WOL options before sleep"
+ echo " -b name           execute shell script 'name' before sleep"
+ echo " -p name           execute shell script 'name' after wake-up"
+ echo " -C case           execute case (1) sleep or (2) shutdown"
+ echo " -D 0-4            set debug reporting (0-4)"
+ echo " -ED               print drives outside of array and exit"
+ echo " -V                print program version and exit"
+ echo " -q                terminate running background instance of s3_sleep"
 }
 
 # default settings
@@ -154,8 +161,16 @@ postRun=              # no additional commands to run
 quit_flag=no          # signal program exit
 sleepNow=no           # force immediate sleep now
 
+# tvheadend control
+tvheadendIp=
+tvheadendPort=9981
+tvheadendUser=
+tvheadendPassword=
+tvheadendWakeupRec=no
+tvheadendBootDelaySeconds=180
+
 # options to overwrite defaults
-while getopts "acnN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:" opt; do
+while getopts "acnWN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:H:E:A:P:Y:" opt; do
   case $opt in
     a) checkHDD=yes ;;
     c) checkCache=no ;;
@@ -179,6 +194,12 @@ while getopts "acnN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:" opt; do
     S) sleepNow=yes ;;
     L) checkSSH=yes ;;
     l) checkTTY=yes ;;
+    W) tvheadendWakeupRec=yes;; 
+    H) tvheadendIp=$OPTARG ;;
+    E) tvheadendPort=$OPTARG ;;
+    A) tvheadendUser=$OPTARG ;;
+    P) tvheadendPassword=$OPTARG ;;
+    Y) tvheadendBootDelaySeconds=$OPTARG ;;
     b) preRun=$OPTARG ;;
     p) postRun=$OPTARG ;;
     D) debug=$OPTARG ;;
@@ -310,6 +331,43 @@ SSH_activity() {
   fi
 }
 
+tvheadend_wake_up_time() {
+  if [ "${tvheadendWakeupRec:-no}" == 'yes' ] ; then
+    echo 0 > /sys/class/rtc/rtc0/wakealarm
+    activities=()
+    tvheadend_dvr_upcoming=$(curl --max-time 180 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
+    if [ "$?" != 0 ]; then
+      return 1
+    fi
+    IFS=$'\n' activities+=($(echo $tvheadend_dvr_upcoming | jq -r ".entries[] | \"Tvheadend schedule:\" + (.start_real | tostring) + \":\" + .channelname + \" - \" + .disp_title + if (.disp_subtitle | length > 0) then \" (\" + .disp_subtitle + \")\" else \"\" end"))
+
+    if [ "${#activities[@]}" -gt 0 ]; then
+        IFS=$'\n' activities=($(sort -t: -k2 <<<"${activities[*]}"))
+
+        now=$(date +%s)
+        for timestamp_def in "${activities[@]}"
+        do
+            IFS=':' read -r source timestamp comment <<< "$timestamp_def"
+            message=""
+            if [ -n "$comment" ]
+            then
+                message=": $comment"
+            fi
+            message="$(date --date @$timestamp)$message from $source"
+
+            if [ "$timestamp" -gt "$now" ]
+            then
+                wake_date=$(($next - ${tvheadendBootDelaySeconds:-180}))
+                log "Next activity at $message"
+                log "Set wakeup time to"
+                echo "$(/usr/sbin/rtcwake -m no -t $wake_date)"
+                return
+            fi
+        done
+    fi
+  fi
+}
+
 pre_sleep_activity() {
 # Set WOL MagicPacket options
   if [[ -n $setWol ]]; then
@@ -344,6 +402,8 @@ post_sleep_activity() {
 }
 
 system_sleep() {
+  tvheadend_wake_up_time
+
 # Do pre-sleep activities
   pre_sleep_activity
 # Go to sleep
@@ -355,6 +415,8 @@ system_sleep() {
 }
 
 system_down() {
+  tvheadend_wake_up_time
+
   log "Shutdown system now"
 # Perform a 'clean' powerdown
   if [[ -x /sbin/poweroff ]]; then
