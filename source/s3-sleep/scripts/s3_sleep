@@ -387,25 +387,25 @@ tvheadend_activity()
   return 0
 }
 
-tvheadend_wake_up_time() {
-  if [[ $tvheadendWakeupRec == yes ]]; then
-    echo 0 > /sys/class/rtc/rtc0/wakealarm
-    activities=()
-    tvheadend_dvr_upcoming=$(curl --max-time 180 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
-    if [ "$?" != 0 ]; then
-        result="Cannot connect to TVHeadend"
-        echo $result
-        return 0
-    fi
-    IFS=$'\n' activities+=($(echo $tvheadend_dvr_upcoming | jq -r ".entries[] | \"Tvheadend schedule:\" + (.start_real | tostring) + \":\" + .channelname + \" - \" + .disp_title + if (.disp_subtitle | length > 0) then \" (\" + .disp_subtitle + \")\" else \"\" end"))
+wake_up_times() {
+  echo 0 > /sys/class/rtc/rtc0/wakealarm
 
-    if [ -f "$wakeUpTimes" ] && [ -x "$wakeUpTimes" ]
-        then
-            IFS=$'\n'
-            for line in $("$wakeUpTimes")
-            do
-                activities+=("$wakeUpTimes:$line")
-            done
+  activities=()
+  if [ -f "$wakeUpTimes" ] && [ -x "$wakeUpTimes" ]
+      then
+          IFS=$'\n'
+          for line in $("$wakeUpTimes")
+          do
+              activities+=("$wakeUpTimes:$line")
+          done
+  fi
+
+  if [[ $tvheadendWakeupRec == yes ]]; then
+    
+
+    tvheadend_dvr_upcoming=$(curl --max-time 180 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
+    if [ "$?" = 0 ]; then
+        IFS=$'\n' activities+=($(echo $tvheadend_dvr_upcoming | jq -r ".entries[] | \"Tvheadend schedule:\" + (.start_real | tostring) + \":\" + .channelname + \" - \" + .disp_title + if (.disp_subtitle | length > 0) then \" (\" + .disp_subtitle + \")\" else \"\" end"))
     fi
 
     if [ "${#activities[@]}" -gt 0 ]; then
@@ -469,8 +469,8 @@ post_sleep_activity() {
 }
 
 system_sleep() {
-  tvh_wake_result=$(tvheadend_wake_up_time); tvh_wake_rc=$?
-  log "TVH Wake up result: '$tvh_wake_result'"
+  wake_result=$(wake_up_times); wake_rc=$?
+  log "Wake up times result: '$wake_result'"
 
 # Do pre-sleep activities
   pre_sleep_activity
@@ -483,8 +483,8 @@ system_sleep() {
 }
 
 system_down() {
-  tvh_wake_result=$(tvheadend_wake_up_time); tvh_wake_rc=$?
-  log "TVH Wake up result: '$tvh_wake_result'"
+  wake_result=$(wake_up_times); wake_rc=$?
+  log "Wake up times result: '$wake_result'"
 
   log "Shutdown system now"
 # Perform a 'clean' powerdown
