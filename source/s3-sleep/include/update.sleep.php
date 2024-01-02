@@ -32,8 +32,10 @@ foreach ($new as $key => $value) {
   case '#folder':
     $preRun = "$value/preRun";
     $postRun = "$value/postRun";
+    $wakeUpTimes = "$value/wakeUpTimes";
     exec("rm -f $preRun");
     exec("rm -f $postRun");
+    exec("rm -f $wakeUpTimes");
   break;
   case '#prefix':
     parse_str($value, $prefix);
@@ -60,6 +62,12 @@ foreach ($new as $key => $value) {
     exec("chmod +x $postRun");
     $_POST[$key] = urlencode($value);
     $options .= "-p $postRun ";
+  break;
+  case 'wakeUpTimes':
+    file_put_contents($wakeUpTimes, "#!/bin/bash\n".str_replace("\r","",$value));
+    exec("chmod +x $wakeUpTimes");
+    $_POST[$key] = urlencode($value);
+    $options .= "-k $wakeUpTimes ";
   break;
   case 'stopDay':
   case 'stopHour':
