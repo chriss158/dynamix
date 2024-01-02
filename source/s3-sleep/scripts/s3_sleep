@@ -374,38 +374,37 @@ queryTvheadend()
 TVH_activity()
 {
   if [[ $tvheadendCheckActivity == yes ]]; then
-      sunscriptions=$(queryTvheadend "/api/status/subscriptions")
-      if [ "$?" != 0 ]; then
-        result="Cannot connect to TVHeadend"
-        echo $result
-        return 0
-      fi
-
-      IFS=$'\n' subscription_titles+=($(echo $subscriptions | jq -r ".entries[] | .title" ))
-      for subscription_title in "${subscription_titles[@]}"; do
-          if [ "$subscription_title" != "epggrab" ] || [ "${tvheadendConsiderEPGGrabbing:-yes}" = yes ]; then
-              result="Tvheadend has subscription: '$subscription_title', auto suspend terminated"
-              echo $result
-              return 1
-          fi
-      done
-
-      tvheadend_dvr_upcoming=$(queryTvheadend "/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
-      if [ "$?" != 0 ]; then
-        result="Cannot connect to TVHeadend"
-        echo $result
-        return 0
-      fi
-      start_date=$(echo $tvheadend_dvr_upcoming | jq -r ".entries[0] | .start_real")
-      if [ -n "$start_date" ]; then
-        now=$(date +%s)
-        let delta=(start_date - now)/60
-        if [ "$delta" -le "${tvheadendIdleMinutesBeforeRecording:-15}" ] ; then
-            result="Tvheadend recording starts in $delta minutes, auto suspend terminated"
+    subscriptions=$(queryTvheadend "/api/status/subscriptions")
+    if [ "$?" != 0 ]; then
+      result=$subscriptions
+      echo $result
+      return 0
+    fi
+    IFS=$'\n' subscription_titles+=($(echo $subscriptions | jq -r ".entries[] | .title" ))
+    for subscription_title in "${subscription_titles[@]}"; do
+        if [ "$subscription_title" != "epggrab" ] || [ "${tvheadendConsiderEPGGrabbing:-yes}" = yes ]; then
+            result="Tvheadend has subscription: '$subscription_title', auto suspend terminated"
             echo $result
             return 1
         fi
+    done
+
+    tvheadend_dvr_upcoming=$(queryTvheadend "/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
+    if [ "$?" != 0 ]; then
+      result=$tvheadend_dvr_upcoming
+      echo $result
+      return 0
+    fi
+    start_date=$(echo $tvheadend_dvr_upcoming | jq -r ".entries[0] | .start_real")
+    if [ -n "$start_date" ]; then
+      now=$(date +%s)
+      let delta=(start_date - now)/60
+      if [ "$delta" -le "${tvheadendIdleMinutesBeforeRecording:-15}" ] ; then
+          result="Tvheadend recording starts in $delta minutes, auto suspend terminated"
+          echo $result
+          return 1
       fi
+    fi
   fi
   result=""
   echo $result
