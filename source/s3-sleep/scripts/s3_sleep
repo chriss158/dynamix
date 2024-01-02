@@ -346,10 +346,35 @@ SSH_activity() {
   fi
 }
 
-tvheadend_activity()
+queryTvheadend()
+{
+        response=$(curl --max-time 5 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort$1")
+
+
+        # return result if successful
+        if [ "$?" = 0 ]; then
+                echo "$response"
+                return
+        fi
+
+        # output failure reason
+        case "$?" in
+                "28")
+                        echo "Error: timeout after 5 seconds while trying to access $1"
+                        return 1;;
+                "7")
+                        echo "Error: failed to connect to $1"
+                        return 1;;
+                *)
+                        echo "Error: connecting to $1 returned exit code $?"
+                        return 1;;
+        esac
+}
+
+TVH_activity()
 {
   if [[ $tvheadendCheckActivity == yes ]]; then
-      subscriptions=$(curl --max-time 180 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort/api/status/subscriptions")
+      sunscriptions=$(queryTvheadend "/api/status/subscriptions")
       if [ "$?" != 0 ]; then
         result="Cannot connect to TVHeadend"
         echo $result
@@ -365,7 +390,7 @@ tvheadend_activity()
           fi
       done
 
-      tvheadend_dvr_upcoming=$(curl --max-time 180 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
+      tvheadend_dvr_upcoming=$(queryTvheadend "/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
       if [ "$?" != 0 ]; then
         result="Cannot connect to TVHeadend"
         echo $result
@@ -401,9 +426,7 @@ wake_up_times() {
   fi
 
   if [[ $tvheadendWakeupRec == yes ]]; then
-    
-
-    tvheadend_dvr_upcoming=$(curl --max-time 180 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
+    tvheadend_dvr_upcoming=$(queryTvheadend "/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
     if [ "$?" = 0 ]; then
         IFS=$'\n' activities+=($(echo $tvheadend_dvr_upcoming | jq -r ".entries[] | \"Tvheadend schedule:\" + (.start_real | tostring) + \":\" + .channelname + \" - \" + .disp_title + if (.disp_subtitle | length > 0) then \" (\" + .disp_subtitle + \")\" else \"\" end"))
     fi
@@ -424,9 +447,13 @@ wake_up_times() {
 
             if [ "$timestamp" -gt "$now" ]
             then
-                wake_date=$(($timestamp - ${tvheadendBootDelaySeconds:-180}))
+                if [ "$source" = "Tvheadend schedule" ]; then
+                  wake_date=$(($timestamp - ${tvheadendBootDelaySeconds:-180}))
+                else
+                  wake_date=$(($timestamp))
+                fi
                 rtc_out=$(echo "$(/usr/sbin/rtcwake -m no -t $wake_date)")
-                result="Next activity at $message. Set wakeup time to\n$rtc_out"
+                result="Next activity at $message. Set wakeup time to '$rtc_out'"
                 echo $result
                 return 0
             fi
@@ -592,7 +619,7 @@ while [[ -f $lockfile ]]; do
         start=$(txrx_bytes)
       else
         log "Check TVHeadend activity"
-        tvh_result=$(tvheadend_activity); tvh_rc=$?
+        tvh_result=$(TVH_activity); tvh_rc=$?
         log "Activity result: '$tvh_result'"
         if [[ $tvh_rc -eq 0 ]]; then
           log "Check TCP/SSH/TTY/IP activity"
