@@ -17,10 +17,11 @@ $cfg     = parse_plugin_cfg("dynamix.s3.sleep");
 $debug   = $cfg['debug'] ? "-D {$cfg['debug']}" : "";
 $preRun  = $cfg['preRun'] ? "-b $docroot/plugins/dynamix.s3.sleep/scripts/preRun" : "";
 $postRun = $cfg['postRun'] ? "-p $docroot/plugins/dynamix.s3.sleep/scripts/postRun" : "";
+$wakeUpTimes = $cfg['wakeUpTimes'] ? "-k $docroot/plugins/dynamix.s3.sleep/scripts/wakeUpTimes" : "";
 
 // Go to sleep
 exec("echo 'Enter sleep mode'|logger --tag s3_sleep");
-exec("$docroot/plugins/dynamix.s3.sleep/scripts/s3_sleep -S $preRun $postRun $debug");
+exec("$docroot/plugins/dynamix.s3.sleep/scripts/s3_sleep -S $preRun $postRun $wakeUpTimes $debug");
 
 // Now sleeping...
 exec("echo 'Wake-up from sleep mode'|logger --tag s3_sleep");

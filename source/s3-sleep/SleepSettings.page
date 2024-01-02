@@ -379,6 +379,17 @@ _(TVHeadend Password)_:
 > Set TVHeadend Password.
 :end
 
+_(Wake up times)_:
+: <textarea name="wakeUpTimes" rows="6" columns="120" wrap="off" placeholder="_(Enter wake ups times here)_"><?=urldecode($cfg['wakeUpTimes'])?></textarea>
+
+:s3sleep_wakeuptimes_plug:
+> Use this to add wake up times. 
+> Syntax: <timestamp> or <timestamp>:<comment>
+> Examples: 
+> date --date="next Wednesday 11:28" +%s
+> echo $(date --date="next Saturday 11:28" +%s):Weekly backup
+:end
+
 _(Enable DEBUG mode)_:
 : <select name="debug" onchange="logNote(this.form.debug.value)">
   <?=mk_option($cfg['debug'], "0", _("No"))?>

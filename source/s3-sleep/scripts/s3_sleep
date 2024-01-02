@@ -89,7 +89,7 @@ fi
 
 usage() {
  echo
- echo "Usage: $program [-acnRFSLlVqWTG] [-f type] [-I disk] [-N idle] [-i ip] [-d day] [-h hour] [-m time] [-t time] [-e eth] [-w wol] [-b name] [-p name] [-C case] [-D 0-4] [-ED] [-H tvheadend ip] [-E tvheadend port] [-A tvheadend user] [-P tvheadend password] [-Y tvheadend boot delay] [-M tvheadend idle minutes]"
+ echo "Usage: $program [-acnRFSLlVqWTG] [-f type] [-I disk] [-N idle] [-i ip] [-d day] [-h hour] [-m time] [-t time] [-e eth] [-w wol] [-b name] [-k name] [-p name] [-C case] [-D 0-4] [-ED] [-H tvheadend ip] [-E tvheadend port] [-A tvheadend user] [-P tvheadend password] [-Y tvheadend boot delay] [-M tvheadend idle minutes]"
  echo " -a                wait for array inactivity"
  echo " -c                exclude cache drive from array monitoring"
  echo " -W                Wake up for TVHeadend recordings"
@@ -119,6 +119,7 @@ usage() {
  echo " -w wol            set WOL options before sleep"
  echo " -b name           execute shell script 'name' before sleep"
  echo " -p name           execute shell script 'name' after wake-up"
+ echo " -k name           shellscript 'name' with wake-up times"
  echo " -C case           execute case (1) sleep or (2) shutdown"
  echo " -D 0-4            set debug reporting (0-4)"
  echo " -ED               print drives outside of array and exit"
@@ -176,6 +177,9 @@ tvheadendCheckActivity=no
 tvheadendIdleMinutesBeforeRecording=15
 tvheadendConsiderEPGGrabbing=no
 
+# wake up times
+wakeUpTimes=
+
 # options to overwrite defaults
 while getopts "acnWTGN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:H:E:A:P:Y:M:" opt; do
   case $opt in
@@ -212,6 +216,7 @@ while getopts "acnWTGN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:H:E:A:P:Y:M:" opt; do
     G) tvheadendConsiderEPGGrabbing=yes;;
     b) preRun=$OPTARG ;;
     p) postRun=$OPTARG ;;
+    k) wakeUpTimes=$OPTARG ;;
     D) debug=$OPTARG ;;
     q) quit_flag=yes ;;
    \?) usage; exit ;;
@@ -393,6 +398,15 @@ tvheadend_wake_up_time() {
         return 0
     fi
     IFS=$'\n' activities+=($(echo $tvheadend_dvr_upcoming | jq -r ".entries[] | \"Tvheadend schedule:\" + (.start_real | tostring) + \":\" + .channelname + \" - \" + .disp_title + if (.disp_subtitle | length > 0) then \" (\" + .disp_subtitle + \")\" else \"\" end"))
+
+    if [ -f "$wakeUpTimes" ] && [ -x "$wakeUpTimes" ]
+        then
+            IFS=$'\n'
+            for line in $("$wakeUpTimes")
+            do
+                activities+=("$wakeUpTimes:$line")
+            done
+    fi
 
     if [ "${#activities[@]}" -gt 0 ]; then
         IFS=$'\n' activities=($(sort -t: -k2 <<<"${activities[*]}"))
