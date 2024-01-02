@@ -396,7 +396,7 @@ TVH_activity()
       return 0
     fi
     start_date=$(echo $tvheadend_dvr_upcoming | jq -r ".entries[0] | .start_real")
-    if [ -n "$start_date" ]; then
+    if [ -n "$start_date" ] && [ "$start_date" != "null" ]; then
       now=$(date +%s)
       let delta=(start_date - now)/60
       if [ "$delta" -le "${tvheadendIdleMinutesBeforeRecording:-15}" ] ; then
