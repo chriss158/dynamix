@@ -181,7 +181,7 @@ tvheadendConsiderEPGGrabbing=no
 wakeUpTimes=
 
 # options to overwrite defaults
-while getopts "acnWTGN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:H:E:A:P:Y:M:" opt; do
+while getopts "acnWTGN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:H:E:A:P:Y:M:k:" opt; do
   case $opt in
     a) checkHDD=yes ;;
     c) checkCache=no ;;
