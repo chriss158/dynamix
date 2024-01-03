@@ -385,11 +385,21 @@ _(Wake up times)_:
 :s3sleep_wakeuptimes_plug:
 > Use this to add wake up times. 
 >
-> Syntax: <timestamp> or <timestamp>:<comment>
+> Syntax: timestamp or timestamp:comment
+> 
 > Examples: 
 >
 > date --date="next Wednesday 11:28" +%s
+> 
 > echo $(date --date="next Saturday 11:28" +%s):Weekly backup
+>
+> Daily 01:55 with comment Mover
+>
+> [ $(date '+%H%M') -le 155 ] && echo $(date -d '1:55' +%s):Mover || echo $(date -d '1:55 + 1 day' +%s):Mover
+>
+> Monthly (Last day of month 23:55)
+>
+> echo $(date -d "`date +%Y%m01` +1 month - 5 minutes" +%s):Parity
 :end
 
 _(Enable DEBUG mode)_:

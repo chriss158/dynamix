@@ -412,7 +412,6 @@ TVH_activity()
 }
 
 wake_up_times() {
-  echo 0 > /sys/class/rtc/rtc0/wakealarm
 
   activities=()
   if [ -f "$wakeUpTimes" ] && [ -x "$wakeUpTimes" ]
@@ -432,6 +431,7 @@ wake_up_times() {
   fi
 
   if [ "${#activities[@]}" -gt 0 ]; then
+      echo 0 > /sys/class/rtc/rtc0/wakealarm
       IFS=$'\n' activities=($(sort -t: -k2 <<<"${activities[*]}"))
 
       now=$(date +%s)
