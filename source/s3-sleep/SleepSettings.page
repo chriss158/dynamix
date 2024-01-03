@@ -267,14 +267,14 @@ _(Set WOL options before sleep)_:
 
 <?endif;?>
 _(Custom commands before sleep)_:
-: <textarea name="preRun" rows="6" columns="300" wrap="off" placeholder="_(Enter custom commands here)_"><?=urldecode($cfg['preRun'])?></textarea>
+: <textarea name="preRun" rows="6" cols="200" style="resize: both;" wrap="off" placeholder="_(Enter custom commands here)_"><?=urldecode($cfg['preRun'])?></textarea>
 
 :s3sleep_before_plug:
 > Any extra commands before sleep or shutdown is invoked can be placed here. This maybe cleanup or other desirable actions.
 :end
 
 _(Custom commands after wake-up)_:
-: <textarea name="postRun" rows="6" columns="300" wrap="off" placeholder="_(Enter custom commands here)_"><?=urldecode($cfg['postRun'])?></textarea>
+: <textarea name="postRun" rows="6" cols="200" style="resize: both;" wrap="off" placeholder="_(Enter custom commands here)_"><?=urldecode($cfg['postRun'])?></textarea>
 
 :s3sleep_after_plug:
 > Any extra commands after wake-up of sleep can be placed here. This might be helpful for restoring a previous situation.
@@ -380,12 +380,14 @@ _(TVHeadend Password)_:
 :end
 
 _(Wake up times)_:
-: <textarea name="wakeUpTimes" rows="6" columns="300" wrap="off" placeholder="_(Enter wake ups times here)_"><?=urldecode($cfg['wakeUpTimes'])?></textarea>
+: <textarea name="wakeUpTimes" rows="6" cols="200" style="resize: both;" wrap="off" placeholder="_(Enter wake ups times here)_"><?=urldecode($cfg['wakeUpTimes'])?></textarea>
 
 :s3sleep_wakeuptimes_plug:
 > Use this to add wake up times. 
+>
 > Syntax: <timestamp> or <timestamp>:<comment>
 > Examples: 
+>
 > date --date="next Wednesday 11:28" +%s
 > echo $(date --date="next Saturday 11:28" +%s):Weekly backup
 :end

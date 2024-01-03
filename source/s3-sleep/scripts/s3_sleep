@@ -429,35 +429,36 @@ wake_up_times() {
     if [ "$?" = 0 ]; then
         IFS=$'\n' activities+=($(echo $tvheadend_dvr_upcoming | jq -r ".entries[] | \"Tvheadend schedule:\" + (.start_real | tostring) + \":\" + .channelname + \" - \" + .disp_title + if (.disp_subtitle | length > 0) then \" (\" + .disp_subtitle + \")\" else \"\" end"))
     fi
+  fi
 
-    if [ "${#activities[@]}" -gt 0 ]; then
-        IFS=$'\n' activities=($(sort -t: -k2 <<<"${activities[*]}"))
+  if [ "${#activities[@]}" -gt 0 ]; then
+      IFS=$'\n' activities=($(sort -t: -k2 <<<"${activities[*]}"))
 
-        now=$(date +%s)
-        for timestamp_def in "${activities[@]}"
-        do
-            IFS=':' read -r source timestamp comment <<< "$timestamp_def"
-            message=""
-            if [ -n "$comment" ]
-            then
-                message=": $comment"
-            fi
-            message="$(date --date @$timestamp)$message from $source"
+      now=$(date +%s)
+      for timestamp_def in "${activities[@]}"
+      do
+          IFS=':' read -r source timestamp comment <<< "$timestamp_def"
+          message=""
+          if [ -n "$comment" ]
+          then
+              message=": $comment"
+          fi
+          message="$(date --date @$timestamp)$message from $source"
 
-            if [ "$timestamp" -gt "$now" ]
-            then
-                if [ "$source" = "Tvheadend schedule" ]; then
-                  wake_date=$(($timestamp - ${tvheadendBootDelaySeconds:-180}))
-                else
-                  wake_date=$(($timestamp))
-                fi
-                rtc_out=$(echo "$(/usr/sbin/rtcwake -m no -t $wake_date)")
-                result="Next activity at $message. Set wakeup time to '$rtc_out'"
-                echo $result
-                return 0
-            fi
-        done
-    fi
+          if [ "$timestamp" -gt "$now" ]
+          then
+              if [ "$source" = "Tvheadend schedule" ]; then
+                wake_date=$(($timestamp - ${tvheadendBootDelaySeconds:-180}))
+              else
+                wake_date=$(($timestamp))
+              fi
+              rtc_out=$(echo "$(/usr/sbin/rtcwake -m no -t $wake_date)")
+              result="Next activity at $message. Set wakeup time to '$rtc_out'"
+              echo $result
+              return 0
+          fi
+      done
+    
   fi
 }
 
