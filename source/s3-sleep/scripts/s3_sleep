@@ -569,6 +569,7 @@ done
 array=($(echo ${array[@]}|tr ' ' '\n'|sort))
 disks=($(echo ${disks[@]}|tr ' ' '\n'|sort))
 [[ -n $hosts ]] && devices=${hosts[@]} || devices=no
+[[ -n $processes ]] && checkProcesses=${processes[@]} || checkProcesses=no
 
 echo "----------------------------------------------
 command-args=$*
@@ -578,6 +579,7 @@ check network activity=$checkTCP
 check active devices=$devices
 check local login=$checkTTY
 check remote login=$checkSSH
+check process activity=$checkProcesses
 check TVHeadend busy=$tvheadendCheckActivity
 version=$version
 ----------------------------------------------
