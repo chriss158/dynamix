@@ -90,7 +90,7 @@ fi
 
 usage() {
  echo
- echo "Usage: $program [-acnRFSLlVqWTG] [-f type] [-I disk] [-N idle] [-i ip] [-d day] [-h hour] [-m time] [-t time] [-e eth] [-w wol] [-b name] [-k name] [-p name] [-r processes] [-C case] [-D 0-4] [-ED] [-H tvheadend ip] [-E tvheadend port] [-A tvheadend user] [-P tvheadend password] [-Y tvheadend boot delay] [-M tvheadend idle minutes]"
+ echo "Usage: $program [-acnRFSLlVqWTG] [-f type] [-I disk] [-N idle] [-i ip] [-d day] [-h hour] [-m time] [-t time] [-e eth] [-w wol] [-b name] [-k name] [-p name] [-r process] [-C case] [-D 0-4] [-ED] [-H tvheadend ip] [-E tvheadend port] [-A tvheadend user] [-P tvheadend password] [-Y tvheadend boot delay] [-M tvheadend idle minutes]"
  echo " -a                wait for array inactivity"
  echo " -c                exclude cache drive from array monitoring"
  echo " -W                Wake up for TVHeadend recordings"
@@ -107,7 +107,7 @@ usage() {
  echo " -n                wait for network inactivity"
  echo " -N idle           set TCP idle threshold"
  echo " -R                do DHCP renewal after wake-up"
- echo " -r processes      a list of processes wich prevent suspend"
+ echo " -r process        A process wich prevent suspend"
  echo " -F                force gigabit speed after wake-up"
  echo " -S                sleep NOW"
  echo " -i ip             IP address to ping (may be repeated as many times as desired)"

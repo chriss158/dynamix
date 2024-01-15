@@ -75,6 +75,9 @@ foreach ($new as $key => $value) {
   case 'outside':
     $list = explode(',', $value);
     foreach ($list as $insert) $options .= "-{$prefix[$key]} $insert ";
+  case 'processes':
+    $list = explode(' ', $value);
+    foreach ($list as $insert) $options .= "-{$prefix[$key]} $insert ";
   break;
   default:
     if ($key[0]!='#') $options .= (isset($prefix[$key]) ? "-{$prefix[$key]} " : "")."$value ";
