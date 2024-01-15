@@ -44,11 +44,12 @@
 # Version 3.0.11  Use sdspin to monitor disks (provided by Doron)
 # Version 3.0.12  Add wake up for TVHeadend recordings
 # Version 3.0.13  Add check for TVHeadend activity
-# Version 3.0.14  Add check for process activity
+# Version 3.0.14  Add wake up times
+# Version 3.0.15  Add check for process activity
 #
 # Bergware International
 ####################################################################################
-version=3.0.13
+version=3.0.15
 program=$(basename $0)
 ini=/var/local/emhttp/disks.ini
 
