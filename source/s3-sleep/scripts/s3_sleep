@@ -44,6 +44,7 @@
 # Version 3.0.11  Use sdspin to monitor disks (provided by Doron)
 # Version 3.0.12  Add wake up for TVHeadend recordings
 # Version 3.0.13  Add check for TVHeadend activity
+# Version 3.0.14  Add check for process activity
 #
 # Bergware International
 ####################################################################################
@@ -89,7 +90,7 @@ fi
 
 usage() {
  echo
- echo "Usage: $program [-acnRFSLlVqWTG] [-f type] [-I disk] [-N idle] [-i ip] [-d day] [-h hour] [-m time] [-t time] [-e eth] [-w wol] [-b name] [-k name] [-p name] [-C case] [-D 0-4] [-ED] [-H tvheadend ip] [-E tvheadend port] [-A tvheadend user] [-P tvheadend password] [-Y tvheadend boot delay] [-M tvheadend idle minutes]"
+ echo "Usage: $program [-acnRFSLlVqWTG] [-f type] [-I disk] [-N idle] [-i ip] [-d day] [-h hour] [-m time] [-t time] [-e eth] [-w wol] [-b name] [-k name] [-p name] [-r processes] [-C case] [-D 0-4] [-ED] [-H tvheadend ip] [-E tvheadend port] [-A tvheadend user] [-P tvheadend password] [-Y tvheadend boot delay] [-M tvheadend idle minutes]"
  echo " -a                wait for array inactivity"
  echo " -c                exclude cache drive from array monitoring"
  echo " -W                Wake up for TVHeadend recordings"
@@ -106,6 +107,7 @@ usage() {
  echo " -n                wait for network inactivity"
  echo " -N idle           set TCP idle threshold"
  echo " -R                do DHCP renewal after wake-up"
+ echo " -r processes      a list of processes wich prevent suspend"
  echo " -F                force gigabit speed after wake-up"
  echo " -S                sleep NOW"
  echo " -i ip             IP address to ping (may be repeated as many times as desired)"
@@ -180,8 +182,10 @@ tvheadendConsiderEPGGrabbing=no
 # wake up times
 wakeUpTimes=
 
+processes=()
+
 # options to overwrite defaults
-while getopts "acnWTGN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:H:E:A:P:Y:M:k:" opt; do
+while getopts "acnWTGN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:H:E:A:P:Y:M:k:r:" opt; do
   case $opt in
     a) checkHDD=yes ;;
     c) checkCache=no ;;
@@ -190,6 +194,7 @@ while getopts "acnWTGN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:H:E:A:P:Y:M:k:" opt; do
     n) checkTCP=yes ;;
     N) idle=$OPTARG ;;
     i) hosts+=($OPTARG) ;;
+    r) processes+=($OPTARG) ;;
     d) skipDay+=($OPTARG) ;;
     h) skipHour+=($OPTARG) ;;
     m) delayInit=$OPTARG ;;
@@ -319,6 +324,22 @@ IP_activity() {
     log "Host activity on going: $ip"
     echo $result
   fi
+}
+
+process_activity()
+{
+  result=
+  if [[ -n $processes ]]; then
+    for process in ${processes[@]}; do
+      if [ `pgrep -c $process` -gt 0 ] ; then
+        log "Process activity on going: $process still active."
+        result=1
+        break
+      fi
+    done
+  fi
+	echo $result
+
 }
 
 TTY_activity() {
@@ -623,7 +644,7 @@ while [[ -f $lockfile ]]; do
         log "Activity result: '$tvh_result'"
         if [[ $tvh_rc -eq 0 ]]; then
           log "Check TCP/SSH/TTY/IP activity"
-          if [[ -z $(TCP_activity) && -z $(SSH_activity) && -z $(TTY_activity) && -z $(IP_activity) ]]; then
+          if [[ -z $(TCP_activity) && -z $(SSH_activity) && -z $(TTY_activity) && -z $(IP_activity) && -z $(process_activity) ]]; then
             log "Communication state is idle"
             [[ $action == sleep ]] && system_sleep || system_down
             log "System woken-up. Reset timers"

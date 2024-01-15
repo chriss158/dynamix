@@ -108,7 +108,7 @@ $(function() {
 <input type="hidden" name="#file" value="<?=$plugin?>/<?=$plugin?>.cfg">
 <input type="hidden" name="#include" value="plugins/<?=$plugin?>/include/update.sleep.php">
 <input type="hidden" name="#config" value="<?=$config?>">
-<input type="hidden" name="#prefix" value="timeout=m&port=e&idle=N&pingIP=i&stopHour=h&stopDay=d&setWol=w&debug=D&outside=I&tvheadendIp=H&tvheadendPort=E&tvheadendUser=A&tvheadendPassword=P&tvheadendBootDelaySeconds=Y&tvheadendIdleMinutesBeforeRecording=M">
+<input type="hidden" name="#prefix" value="timeout=m&port=e&idle=N&pingIP=i&stopHour=h&stopDay=d&setWol=w&debug=D&outside=I&tvheadendIp=H&tvheadendPort=E&tvheadendUser=A&tvheadendPassword=P&tvheadendBootDelaySeconds=Y&tvheadendIdleMinutesBeforeRecording=M&processes=r">
 <input type="hidden" name="#folder" value="<?=$scripts?>">
 <span class="bitstream" style="float:right;margin-right:12px"><?=exec("$scripts/s3_sleep -V")?></span>
 
@@ -237,6 +237,17 @@ _(Wait for host inactivity)_ (_(IP address)_):
 > Select whether external hosts need to be monitored and non-responding as a sleep or shutdown condition.
 >
 > External hosts are given by their IP address, use a comma to separate multiple IP addresses. As long as one of the external hosts responds to a ping then sleep/shutdown won't be invoked.
+:end
+
+_(Wait for process inactivity)_:
+: <input type="text" name="processes" maxlength="200" value="<?=$cfg['processes']?>" class="narrow" placeholder="_(no process)_">
+
+:s3sleep_process_plug:
+> Important applications that shall prevent the suspend
+>
+> The values are used with grep, so just a unique portion is sufficient
+>
+> Example: ^nxagent$ ^rsnapshot$ ^wsus$ ^wget$ ^screen$ ^mlnetp$ ^apt-get$ ^aptitude$ ^dpkg$ ^cp$
 :end
 
 _(Wait for user login inactivity)_:
