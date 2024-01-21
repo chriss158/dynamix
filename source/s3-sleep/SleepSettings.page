@@ -243,11 +243,11 @@ _(Wait for process inactivity)_:
 : <input type="text" name="processes" maxlength="200" value="<?=$cfg['processes']?>" class="narrow" placeholder="_(no process)_">
 
 :s3sleep_process_plug:
-> Important applications that shall prevent the suspend
+> Important applications/script that shall prevent the suspend
 >
 > The values are used with grep, so just a unique portion is sufficient
 >
-> Example: ^nxagent$ ^rsnapshot$ ^wsus$ ^wget$ ^screen$ ^mlnetp$ ^apt-get$ ^aptitude$ ^dpkg$ ^cp$
+> Example: ^nxagent$ ^rsnapshot$ ^wsus$ ^wget$ ^screen$ ^mlnetp$ ^dpkg$ ^cp$ /tmp/user.scripts/tmpScripts/backup/script
 :end
 
 _(Wait for user login inactivity)_:

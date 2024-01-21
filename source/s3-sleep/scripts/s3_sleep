@@ -332,7 +332,7 @@ process_activity()
   result=
   if [[ -n $processes ]]; then
     for process in ${processes[@]}; do
-      if [ `pgrep -c $process` -gt 0 ] ; then
+      if [ `pgrep -c $process` -gt 0 ] || [ `pgrep -c -f $process` -gt 0 ]; then
         log "Process activity on going: $process still active."
         result=1
         break
@@ -340,7 +340,6 @@ process_activity()
     done
   fi
 	echo $result
-
 }
 
 TTY_activity() {
