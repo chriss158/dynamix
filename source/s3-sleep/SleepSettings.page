@@ -189,11 +189,11 @@ _(Monitor disks outside array)_:
 :end
 
 <?endif;?>
-_(Extra delay after array inactivity)_:
+_(Extra delay after inactivity)_:
 : <input type="text" name="timeout" maxlength="2" value="<?=$cfg['timeout']?>" class="narrow" placeholder="30">
 
 :s3sleep_extra_delay_plug:
-> Specify an additional delay after the array has become inactive. Value may be 0 for no delay.
+> Specify an additional delay after inactivity. Value may be 0 for no delay.
 :end
 
 _(Wait for network inactivity)_:

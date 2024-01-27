@@ -3,11 +3,11 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "dynamix.s3.sleep">
 <!ENTITY author    "Bergware">
-<!ENTITY version   "2024.01.26">
+<!ENTITY version   "2024.01.27">
 <!ENTITY launch    "Settings/SleepSettings">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/chriss158/dynamix/master/unRAIDv6/&name;.plg">
 <!ENTITY source    "/boot/config/plugins/&name;/&name;">
-<!ENTITY MD5       "3a0d33ea2d0af310835696abb41608cc">
+<!ENTITY MD5       "744850ea927b685687bbe85519726a3b">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.9.0">
@@ -16,6 +16,9 @@
 ##&name;
 
 ###&version;
+- Extra delay is now running after Unraid enters an inactive state (not, as before, after the array is inactive)
+
+###2024.01.10
 - Add check for process activity
 
 ###2024.01.03

@@ -46,10 +46,11 @@
 # Version 3.0.13  Add check for TVHeadend activity
 # Version 3.0.14  Add wake up times
 # Version 3.0.15  Add check for process activity
+# Version 3.0.16  Extra delay is now running after Unraid enters an inactive state (not, as before, after the array is inactive)
 #
 # Bergware International
 ####################################################################################
-version=3.0.15
+version=3.0.16
 program=$(basename $0)
 ini=/var/local/emhttp/disks.ini
 
@@ -394,42 +395,42 @@ queryTvheadend()
 
 TVH_activity()
 {
+  result=
   if [[ $tvheadendCheckActivity == yes ]]; then
     subscriptions=$(queryTvheadend "/api/status/subscriptions")
     if [ "$?" != 0 ]; then
-      result=$subscriptions
+      log $subscriptions
       echo $result
-      return 0
+      return
     fi
     IFS=$'\n' subscription_titles+=($(echo $subscriptions | jq -r ".entries[] | .title" ))
     for subscription_title in "${subscription_titles[@]}"; do
         if [ "$subscription_title" != "epggrab" ] || [ "${tvheadendConsiderEPGGrabbing:-yes}" = yes ]; then
-            result="Tvheadend has subscription: '$subscription_title', auto suspend terminated"
+            log "Tvheadend has subscription: '$subscription_title', auto suspend terminated"
+            result=1
             echo $result
-            return 1
+            return
         fi
     done
 
     tvheadend_dvr_upcoming=$(queryTvheadend "/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
     if [ "$?" != 0 ]; then
-      result=$tvheadend_dvr_upcoming
+      log $tvheadend_dvr_upcoming
       echo $result
-      return 0
+      return
     fi
     start_date=$(echo $tvheadend_dvr_upcoming | jq -r ".entries[0] | .start_real")
     if [ -n "$start_date" ] && [ "$start_date" != "null" ]; then
       now=$(date +%s)
       let delta=(start_date - now)/60
       if [ "$delta" -le "${tvheadendIdleMinutesBeforeRecording:-15}" ] ; then
-          result="Tvheadend recording starts in $delta minutes, auto suspend terminated"
+          log "Tvheadend recording starts in $delta minutes, auto suspend terminated"
+          result=1
           echo $result
-          return 1
+          return
       fi
     fi
   fi
-  result=""
-  echo $result
-  return 0
 }
 
 wake_up_times() {
@@ -545,6 +546,47 @@ system_down() {
   fi
 }
 
+sleep() {
+  sleep 60
+}
+
+IsBusy() 
+{
+  if [[ -n $(exclude_period) ]]; then
+    return 1
+  fi
+
+  if [[ -n $(HDD_activity) ]]; then
+      return 1
+  fi
+
+  if [[ -n $(TVH_activity)  ]]; then
+    return 1
+  fi
+
+  if [[ -n $(TCP_activity) ]]; then
+    return 1
+  fi
+
+  if [[ -n $(SSH_activity) ]]; then
+    return 1
+  fi
+
+  if [[ -n $(TTY_activity) ]]; then
+    return 1
+  fi
+
+  if [[ -n $(IP_activity) ]]; then
+    return 1
+  fi
+
+  if [[ -n $(process_activity) ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
 # Immediate sleep or shutdown
 if [[ $sleepNow == yes ]]; then
   [[ $action == sleep ]] && system_sleep || system_down
@@ -625,39 +667,30 @@ fi
 extraDelay=$delayInit
 [[ $checkTCP == yes ]] && start=0 || start=-1
 while [[ -f $lockfile ]]; do
-  if [[ -z $(exclude_period) ]]; then
-    if [[ -z $(HDD_activity) ]]; then
-      log "All monitored HDDs are spun down"
-      if [[ $extraDelay -ge 0 ]]; then
-        log "Extra delay period running: $extraDelay minute(s)"
-        ((extraDelay--))
-      fi
-    else
-      log "Disk activity detected. Reset timers."
-      extraDelay=$delayInit
-    fi
+  if [[ $start -eq 0 ]]; then
+    log "Initialize TCP activity counter"
+    start=$(txrx_bytes)
+  fi
+
+  IsBusy
+  if [[ $? -eq 0 ]]; then
+    log "Activity detected. Reset timers."
+    extraDelay=$delayInit
+  else
     if [[ $extraDelay -lt 0 ]]; then
-      if [[ $start -eq 0 ]]; then
-        log "Initialize TCP activity counter"
-        start=$(txrx_bytes)
-      else
-        log "Check TVHeadend activity"
-        tvh_result=$(TVH_activity); tvh_rc=$?
-        log "Activity result: '$tvh_result'"
-        if [[ $tvh_rc -eq 0 ]]; then
-          log "Check TCP/SSH/TTY/IP activity"
-          if [[ -z $(TCP_activity) && -z $(SSH_activity) && -z $(TTY_activity) && -z $(IP_activity) && -z $(process_activity) ]]; then
-            log "Communication state is idle"
-            [[ $action == sleep ]] && system_sleep || system_down
-            log "System woken-up. Reset timers"
-            extraDelay=$delayInit
-            [[ $checkTCP == yes ]] && start=0 || start=-1
-          fi
-        fi
-        [[ $start -gt 0 ]] && start=$(txrx_bytes)
-      fi
+      log "Communication state is idle"
+      [[ $action == sleep ]] && system_sleep || system_down
+      log "System woken-up. Reset timers"
+      extraDelay=$delayInit
+      [[ $checkTCP == yes ]] && start=0 || start=-1
+    else
+      log "Extra delay period running: $extraDelay minute(s)"
+      ((extraDelay--))
     fi
   fi
+
+  [[ $start -gt 0 ]] && start=$(txrx_bytes)
+
   sleep 60
 done &
 
