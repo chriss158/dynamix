@@ -546,10 +546,6 @@ system_down() {
   fi
 }
 
-sleep() {
-  sleep 60
-}
-
 IsBusy() 
 {
   if [[ -n $(exclude_period) ]]; then
@@ -557,7 +553,7 @@ IsBusy()
   fi
 
   if [[ -n $(HDD_activity) ]]; then
-      return 1
+    return 1
   fi
 
   if [[ -n $(TVH_activity)  ]]; then
@@ -673,7 +669,7 @@ while [[ -f $lockfile ]]; do
   fi
 
   IsBusy
-  if [[ $? -eq 0 ]]; then
+  if [[ $? -ne 0 ]]; then
     log "Activity detected. Reset timers."
     extraDelay=$delayInit
   else
