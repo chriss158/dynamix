@@ -47,10 +47,12 @@
 # Version 3.0.14  Add wake up times
 # Version 3.0.15  Add check for process activity
 # Version 3.0.16  Extra delay is now running after Unraid enters an inactive state (not, as before, after the array is inactive)
+# Version 3.0.17  Activity detected message only once
+# Version 3.0.18  Fix checking of drive status using sdspin
 #
 # Bergware International
 ####################################################################################
-version=3.0.16
+version=3.0.18
 program=$(basename $0)
 ini=/var/local/emhttp/disks.ini
 

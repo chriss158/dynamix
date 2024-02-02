@@ -3,11 +3,11 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "dynamix.s3.sleep">
 <!ENTITY author    "Bergware">
-<!ENTITY version   "2024.01.28">
+<!ENTITY version   "2024.02.02">
 <!ENTITY launch    "Settings/SleepSettings">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/chriss158/dynamix/master/unRAIDv6/&name;.plg">
 <!ENTITY source    "/boot/config/plugins/&name;/&name;">
-<!ENTITY MD5       "6ae21c84c3fbabf440b45bf4fc45a435">
+<!ENTITY MD5       "0f43f3912103edce29f31371a8a2c6f0">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.9.0">
@@ -16,6 +16,10 @@
 ##&name;
 
 ###&version;
+- Fix checking of drive status using sdspin
+- Activity detected message only once
+
+###2024.01.28
 - Extra delay is now running after Unraid enters an inactive state (not, as before, after the array is inactive)
 
 ###2024.01.10
