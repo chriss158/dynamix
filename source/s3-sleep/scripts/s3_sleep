@@ -49,26 +49,27 @@
 # Version 3.0.16  Extra delay is now running after Unraid enters an inactive state (not, as before, after the array is inactive)
 # Version 3.0.17  Activity detected message only once
 # Version 3.0.18  Fix checking of drive status using sdspin
+# Version 3.0.19  Fix detection of Flash, Cache and Array devices
 #
 # Bergware International
 ####################################################################################
-version=3.0.18
+version=3.0.19
 program=$(basename $0)
 ini=/var/local/emhttp/disks.ini
 
 # Get flash device
 getFlash() {
-  flash=($(grep -PB13 '^type="Flash' $ini|grep -Po '^device="\K[^"]+'))
+  flash=($(grep -PB16 '^type="Flash' $ini|grep -Po '^device="\K[^"]+'))
 }
 
 # Get list of cache devices (if present)
 getCache() {
-  cache=($(grep -PB13 '^type="Cache' $ini|grep -Po '^device="\K[^"]+'))
+  cache=($(grep -PB16 '^type="Cache' $ini|grep -Po '^device="\K[^"]+'))
 }
 
 # Get list of array devices
 getArray() {
-  array=($(grep -PB13 '^type="(Parity|Data)' $ini|grep -Po '^device="\K[^"]+'))
+  array=($(grep -PB16 '^type="(Parity|Data)' $ini|grep -Po '^device="\K[^"]+'))
 }
 
 # Get list of all devices

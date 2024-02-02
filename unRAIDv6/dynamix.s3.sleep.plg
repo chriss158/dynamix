@@ -3,11 +3,11 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "dynamix.s3.sleep">
 <!ENTITY author    "Bergware">
-<!ENTITY version   "2024.02.02">
+<!ENTITY version   "2024.02.03">
 <!ENTITY launch    "Settings/SleepSettings">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/chriss158/dynamix/master/unRAIDv6/&name;.plg">
 <!ENTITY source    "/boot/config/plugins/&name;/&name;">
-<!ENTITY MD5       "0f43f3912103edce29f31371a8a2c6f0">
+<!ENTITY MD5       "efe20e9321d01b25a9ce872072d43f8b">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.9.0">
@@ -17,6 +17,7 @@
 
 ###&version;
 - Fix checking of drive status using sdspin
+- Fix detection of Flash, Cache and Array devices
 - Activity detected message only once
 
 ###2024.01.28
