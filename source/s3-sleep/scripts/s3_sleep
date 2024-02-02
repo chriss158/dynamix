@@ -670,8 +670,10 @@ while [[ -f $lockfile ]]; do
 
   IsBusy
   if [[ $? -ne 0 ]]; then
-    log "Activity detected. Reset timers."
-    extraDelay=$delayInit
+    if [[ $extraDelay != $delayInit ]]; then
+      log "Activity detected. Reset timers."
+      extraDelay=$delayInit
+    fi
   else
     if [[ $extraDelay -lt 0 ]]; then
       log "Communication state is idle"
