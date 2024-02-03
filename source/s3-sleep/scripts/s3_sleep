@@ -50,10 +50,11 @@
 # Version 3.0.17  Activity detected message only once
 # Version 3.0.18  Fix checking of drive status using sdspin
 # Version 3.0.19  Fix detection of Flash, Cache and Array devices
+# Version 3.0.20  Use "idle minutes before next wake up" for all activities, not only for tvheadend recordings
 #
 # Bergware International
 ####################################################################################
-version=3.0.19
+version=3.0.20
 program=$(basename $0)
 ini=/var/local/emhttp/disks.ini
 
@@ -95,7 +96,7 @@ fi
 
 usage() {
  echo
- echo "Usage: $program [-acnRFSLlVqWTG] [-f type] [-I disk] [-N idle] [-i ip] [-d day] [-h hour] [-m time] [-t time] [-e eth] [-w wol] [-b name] [-k name] [-p name] [-r process] [-C case] [-D 0-4] [-ED] [-H tvheadend ip] [-E tvheadend port] [-A tvheadend user] [-P tvheadend password] [-Y tvheadend boot delay] [-M tvheadend idle minutes]"
+ echo "Usage: $program [-acnRFSLlVqWTG] [-f type] [-I disk] [-N idle] [-i ip] [-d day] [-h hour] [-m time] [-t time] [-e eth] [-w wol] [-b name] [-k name] [-p name] [-r process] [-C case] [-D 0-4] [-ED] [-H tvheadend ip] [-E tvheadend port] [-A tvheadend user] [-P tvheadend password] [-Y tvheadend boot delay] [-M idle minutes]"
  echo " -a                wait for array inactivity"
  echo " -c                exclude cache drive from array monitoring"
  echo " -W                Wake up for TVHeadend recordings"
@@ -105,8 +106,8 @@ usage() {
  echo " -P password       TVHeadend Password"
  echo " -Y boot delay     TVHeadend Boot delay"
  echo " -T                TVHeadend check activity"
- echo " -M idle minutes   TVHeadend idle minutes before recording"
  echo " -G                TVHeadend consider EPG grabbing"
+ echo " -M idle minutes   Idle minutes before next wake up"
  echo " -f type           1 = device status monitoring only, 2 = device counters monitoring only"
  echo " -I disk           include outside of array disk (may be repeated for other disks)"
  echo " -n                wait for network inactivity"
@@ -181,11 +182,12 @@ tvheadendPassword=
 tvheadendWakeupRec=no
 tvheadendBootDelaySeconds=180
 tvheadendCheckActivity=no
-tvheadendIdleMinutesBeforeRecording=15
 tvheadendConsiderEPGGrabbing=no
 
 # wake up times
 wakeUpTimes=
+
+idleMinutesBeforeNextWakeUp=15
 
 processes=()
 
@@ -222,8 +224,8 @@ while getopts "acnWTGN:i:f:I:d:h:m:t:e:C:w:RFqVSLlb:p:D:H:E:A:P:Y:M:k:r:" opt; d
     P) tvheadendPassword=$OPTARG ;;
     Y) tvheadendBootDelaySeconds=$OPTARG ;;
     T) tvheadendCheckActivity=yes;;
-    M) tvheadendIdleMinutesBeforeRecording=$OPTARG ;;
     G) tvheadendConsiderEPGGrabbing=yes;;
+    M) idleMinutesBeforeNextWakeUp=$OPTARG ;;
     b) preRun=$OPTARG ;;
     p) postRun=$OPTARG ;;
     k) wakeUpTimes=$OPTARG ;;
@@ -417,29 +419,37 @@ TVH_activity()
             return
         fi
     done
+  fi
+}
 
-    tvheadend_dvr_upcoming=$(queryTvheadend "/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
-    if [ "$?" != 0 ]; then
-      log $tvheadend_dvr_upcoming
+check_idle_minutes_next_wakeup() {
+  result=
+  wake_up_time=$(get_next_wake_up_time)
+  if [ -n "$wake_up_time" ]; then
+    now=$(date +%s)
+    let delta=(wake_up_time - now)/60
+    if [ "$delta" -le "${idleMinutesBeforeNextWakeUp:-15}" ] ; then
+      formatted_time=$(date -d @"$wake_up_time" +"%Y-%m-%d %H:%M:%S")
+      log "Next wake up time $formatted_time is within idle minutes. Next wake up would be in $delta minutes, auto suspend terminated"
+      result=1
       echo $result
       return
-    fi
-    start_date=$(echo $tvheadend_dvr_upcoming | jq -r ".entries[0] | .start_real")
-    if [ -n "$start_date" ] && [ "$start_date" != "null" ]; then
-      now=$(date +%s)
-      let delta=(start_date - now)/60
-      if [ "$delta" -le "${tvheadendIdleMinutesBeforeRecording:-15}" ] ; then
-          log "Tvheadend recording starts in $delta minutes, auto suspend terminated"
-          result=1
-          echo $result
-          return
-      fi
     fi
   fi
 }
 
 wake_up_times() {
+  wake_up_time=$(get_next_wake_up_time)
+  if [ -n "$wake_up_time" ]; then
+    rtc_out=$(echo "$(/usr/sbin/rtcwake -m no -t $wake_up_time)")
+    result="Next activity at $message. Set wakeup time to '$rtc_out'"
+    echo $result
+    return 0
+  fi
+  return 1
+}
 
+get_next_wake_up_time() {
   activities=()
   if [ -f "$wakeUpTimes" ] && [ -x "$wakeUpTimes" ]
       then
@@ -479,14 +489,12 @@ wake_up_times() {
               else
                 wake_date=$(($timestamp))
               fi
-              rtc_out=$(echo "$(/usr/sbin/rtcwake -m no -t $wake_date)")
-              result="Next activity at $message. Set wakeup time to '$rtc_out'"
-              echo $result
+              echo "$wake_date"
               return 0
           fi
       done
-    
   fi
+  return 1
 }
 
 pre_sleep_activity() {
@@ -582,6 +590,10 @@ IsBusy()
   fi
 
   if [[ -n $(process_activity) ]]; then
+    return 1
+  fi
+
+  if [[ -n $(check_idle_minutes_next_wakeup) ]]; then
     return 1
   fi
 

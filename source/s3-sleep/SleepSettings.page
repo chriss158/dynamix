@@ -108,7 +108,7 @@ $(function() {
 <input type="hidden" name="#file" value="<?=$plugin?>/<?=$plugin?>.cfg">
 <input type="hidden" name="#include" value="plugins/<?=$plugin?>/include/update.sleep.php">
 <input type="hidden" name="#config" value="<?=$config?>">
-<input type="hidden" name="#prefix" value="timeout=m&port=e&idle=N&pingIP=i&stopHour=h&stopDay=d&setWol=w&debug=D&outside=I&tvheadendIp=H&tvheadendPort=E&tvheadendUser=A&tvheadendPassword=P&tvheadendBootDelaySeconds=Y&tvheadendIdleMinutesBeforeRecording=M&processes=r">
+<input type="hidden" name="#prefix" value="timeout=m&port=e&idle=N&pingIP=i&stopHour=h&stopDay=d&setWol=w&debug=D&outside=I&tvheadendIp=H&tvheadendPort=E&tvheadendUser=A&tvheadendPassword=P&tvheadendBootDelaySeconds=Y&idleMinutesBeforeNextWakeUp=M&processes=r">
 <input type="hidden" name="#folder" value="<?=$scripts?>">
 <span class="bitstream" style="float:right;margin-right:12px"><?=exec("$scripts/s3_sleep -V")?></span>
 
@@ -321,18 +321,6 @@ _(Check TVHeadend activity)_:
 > Set this to ON, if you want to check if TVHeadend is currently recording/EPG grabbing
 :end
 
-_(TVHeadend idle minutes before recording)_:
-: <input type="text" name="tvheadendIdleMinutesBeforeRecording" maxlength="2" value="<?=$cfg['tvheadendIdleMinutesBeforeRecording']?>" class="narrow" placeholder="15">
-
-:s3sleep_tvhidleminutes_plug:
-> Autosuspension will be aborted if a recording is upcoming within the given
-> duration (unit: minutes). Default: 15 minutes
->
-> The duration of this value (given in minutes) should be greater than the
-> duration of "TVHeadend Boot Delay Seconds" (given in seconds), because otherwise
-> the machine is allowed to shutdown even if it cannot wake up in time.
-:end
-
 _(TVHeadend consider EPG grabbing)_:
 : <select name="tvheadendConsiderEPGGrabbing">
   <?=mk_option($cfg['tvheadendConsiderEPGGrabbing'], "", _("No"))?>
@@ -420,6 +408,18 @@ _(Wake up times)_:
 > *Monthly (Last day of month 23:55)*
 >
 > echo $(date -d "`date +%Y%m01` +1 month - 5 minutes" +%s):Parity
+:end
+
+_(Idle minutes before next wake up)_:
+: <input type="text" name="idleMinutesBeforeNextWakeUp" maxlength="2" value="<?=$cfg['idleMinutesBeforeNextWakeUp']?>" class="narrow" placeholder="15">
+
+:s3sleep_idleminutes_plug:
+> Autosuspension will be aborted if next wake up is within the given
+> duration (unit: minutes). Default: 15 minutes
+>
+> The duration of this value (given in minutes) should be greater than the
+> duration of "TVHeadend Boot Delay Seconds" (given in seconds, if option is used), because otherwise
+> the machine is allowed to shutdown even if it cannot wake up in time.
 :end
 
 _(Enable DEBUG mode)_:
