@@ -438,6 +438,7 @@ check_idle_minutes_next_wakeup() {
 }
 
 wake_up_times() {
+  echo 0 > /sys/class/rtc/rtc0/wakealarm
   wake_up_time=$(get_next_wake_up_time)
   if [ -n "$wake_up_time" ]; then
     rtc_out=$(echo "$(/usr/sbin/rtcwake -m no -t $wake_up_time)")
@@ -469,7 +470,6 @@ get_next_wake_up_time() {
   fi
 
   if [ "${#activities[@]}" -gt 0 ]; then
-      echo 0 > /sys/class/rtc/rtc0/wakealarm
       IFS=$'\n' activities=($(sort -t: -k2 <<<"${activities[*]}"))
 
       now=$(date +%s)
