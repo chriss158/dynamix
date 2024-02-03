@@ -427,7 +427,7 @@ check_idle_minutes_next_wakeup() {
   if [ -n "$wake_up_time" ]; then
     now=$(date +%s)
     let delta=(wake_up_time - now)/60
-    if [ "$delta" -le "${idleMinutesBeforeNextWakeUp:-15}" ] ; then
+    if [ "$delta" -gt 0 ] && [ "$delta" -le "${idleMinutesBeforeNextWakeUp:-15}" ] ; then
       formatted_time=$(date -d @"$wake_up_time" +"%Y-%m-%d %H:%M:%S")
       log "Next wake up time $formatted_time is within idle minutes. Next wake up would be in $delta minutes, auto suspend terminated"
       result=1
