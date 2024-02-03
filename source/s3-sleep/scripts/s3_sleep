@@ -377,27 +377,26 @@ SSH_activity() {
 
 queryTvheadend()
 {
-        response=$(curl --max-time 5 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort$1")
+  response=$(curl --max-time 5 -s --digest -u "$tvheadendUser:$tvheadendPassword" "$tvheadendIp:$tvheadendPort$1")
 
+  # return result if successful
+  if [ "$?" = 0 ]; then
+          echo "$response"
+          return
+  fi
 
-        # return result if successful
-        if [ "$?" = 0 ]; then
-                echo "$response"
-                return
-        fi
-
-        # output failure reason
-        case "$?" in
-                "28")
-                        echo "Error: timeout after 5 seconds while trying to access $1"
-                        return 1;;
-                "7")
-                        echo "Error: failed to connect to $1"
-                        return 1;;
-                *)
-                        echo "Error: connecting to $1 returned exit code $?"
-                        return 1;;
-        esac
+  # output failure reason
+  case "$?" in
+      "28")
+              echo "Error: timeout after 5 seconds while trying to access $1"
+              return 1;;
+      "7")
+              echo "Error: failed to connect to $1"
+              return 1;;
+      *)
+              echo "Error: connecting to $1 returned exit code $?"
+              return 1;;
+  esac
 }
 
 TVH_activity()
@@ -463,7 +462,9 @@ get_next_wake_up_time() {
   if [[ $tvheadendWakeupRec == yes ]]; then
     tvheadend_dvr_upcoming=$(queryTvheadend "/api/dvr/entry/grid_upcoming?sort=start_real&dir=ASC&limit=5")
     if [ "$?" = 0 ]; then
-        IFS=$'\n' activities+=($(echo $tvheadend_dvr_upcoming | jq -r ".entries[] | \"Tvheadend schedule:\" + (.start_real | tostring) + \":\" + .channelname + \" - \" + .disp_title + if (.disp_subtitle | length > 0) then \" (\" + .disp_subtitle + \")\" else \"\" end"))
+      IFS=$'\n' activities+=($(echo $tvheadend_dvr_upcoming | jq -r ".entries[] | \"Tvheadend schedule:\" + (.start_real | tostring) + \":\" + .channelname + \" - \" + .disp_title + if (.disp_subtitle | length > 0) then \" (\" + .disp_subtitle + \")\" else \"\" end"))
+    else
+      log $tvheadend_dvr_upcoming
     fi
   fi
 
