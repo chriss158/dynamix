@@ -291,7 +291,7 @@ HDD_activity() {
     log "Monitor value: $monitor"
 
     for dev in ${array[@]}; do
-      [[ $monitor -ne 2 ]] && $(sdspin /dev/$dev) 
+      [[ $monitor -ne 2 ]] && $(/usr/local/sbin/sdspin /dev/$dev) 
       # sdspin exit codes: 0=spun up, 1=error, 2=spun down
       sdspinExitCode=$?
       log "sdspinExitCode for $dev: $sdspinExitCode"
