@@ -3,11 +3,11 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "dynamix.s3.sleep">
 <!ENTITY author    "Bergware">
-<!ENTITY version   "2024.02.05-3">
+<!ENTITY version   "2024.02.05-4">
 <!ENTITY launch    "Settings/SleepSettings">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/chriss158/dynamix/master/unRAIDv6/&name;.plg">
 <!ENTITY source    "/boot/config/plugins/&name;/&name;">
-<!ENTITY MD5       "5a6386d7d7c59f98ebb03eea50b514b1">
+<!ENTITY MD5       "57221d0b5d13b650a8d7a54c9fa42aa3">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.9.0">
@@ -16,6 +16,9 @@
 ##&name;
 
 ###&version;
+- Fix detection of drive activity after shutdown/standby
+
+###2024.02.05
 - Use "idle minutes before next wake up" for all activities, not only for tvheadend recordings
 
 ###2024.02.02

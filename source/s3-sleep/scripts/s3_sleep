@@ -51,10 +51,11 @@
 # Version 3.0.18  Fix checking of drive status using sdspin
 # Version 3.0.19  Fix detection of Flash, Cache and Array devices
 # Version 3.0.20  Use "idle minutes before next wake up" for all activities, not only for tvheadend recordings
+# Version 3.0.21  Fix detection of drive activity after shutdown/standby
 #
 # Bergware International
 ####################################################################################
-version=3.0.20
+version=3.0.21
 program=$(basename $0)
 ini=/var/local/emhttp/disks.ini
 
@@ -287,14 +288,10 @@ HDD_activity() {
     [[ -f /dev/shm/2 ]] && cp -f /dev/shm/2 /dev/shm/1 || touch /dev/shm/1
     awk '/(sd[a-z]*|nvme[0-9]n1) /{print $3,$6+$10}' /proc/diskstats >/dev/shm/2
     
-    log "Contents of array: ${array[*]}"
-    log "Monitor value: $monitor"
-
     for dev in ${array[@]}; do
       [[ $monitor -ne 2 ]] && $(/usr/local/sbin/sdspin /dev/$dev) 
       # sdspin exit codes: 0=spun up, 1=error, 2=spun down
       sdspinExitCode=$?
-      log "sdspinExitCode for $dev: $sdspinExitCode"
       [[ $monitor -ne 1 ]] && diskio=($(grep -Pho "^$dev \K\d+" /dev/shm/1 /dev/shm/2)) || diskio=
       if [[ $sdspinExitCode -eq 0 || ${diskio[0]} != ${diskio[1]} ]]; then
         result=1
