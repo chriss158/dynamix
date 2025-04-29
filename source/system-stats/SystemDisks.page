@@ -35,7 +35,7 @@ $index  = $text=='left' ? 2 : 0;
 $parity = $arraysize = $arrayfree = 0;
 $series = $sizes = [];
 $gap    = 0.18;
-$height = 52;
+$height = 50;
 $y      = 2;
 $rows   = 0;
 
@@ -63,11 +63,13 @@ foreach ($disks as $disk) {
   }
 }
 
-$arrayused = $arraysize-$arrayfree;
-$totalpercent = 100-round(100*$parity/($arraysize+$parity));
-$totaldisk = 100-$totalpercent-$gap;
-$freepercent = $var['startMode']=='Normal' ? round(100*$arrayfree/$arraysize) : 100;
-$arraypercent = 100-$freepercent;
+if ($arraysize > 0) {
+  $arrayused = $arraysize-$arrayfree;
+  $totalpercent = 100-round(100*$parity/($arraysize+$parity));
+  $totaldisk = 100-$totalpercent-$gap;
+  $freepercent = $var['startMode']=='Normal' ? round(100*$arrayfree/$arraysize) : 100;
+  $arraypercent = 100-$freepercent;
+}
 
 if ($display['time']=="%R") {
   $hour = '%H:%M';
@@ -91,7 +93,6 @@ function bar_color($val) {
   return "greenbar";
 }
 ?>
-<link type="text/css" rel="stylesheet" href="<?=autov("/plugins/$plugin/styles/disk.stats.css")?>">
 <script src="<?=autov("/plugins/$plugin/javascript/jquery.highcharts.js")?>"></script>
 <script>
 var graph = <?=$graph?>;
@@ -111,7 +112,7 @@ function autoscale(value,text,size,kilo) {
 <?if ($show):?>
 function setChart() {
   if (graph==0) {
-    setTimeout(realtime,0);
+    setTimeout(realtime);
     $('#reset').show(); $('#monitor').show();
   } else {
     $('#reset').hide(); $('#monitor').hide();
@@ -121,16 +122,16 @@ function modeller(period) {
   graph = period;
   clearTimeout(timers.rtstime);
 <?if (strpos($show,'cpu')!==false):?>
-  clearTimeout(timers.cputime); setTimeout(cpu,0);
+  clearTimeout(timers.cputime); setTimeout(cpu);
 <?endif;?>
 <?if (strpos($show,'ram')!==false):?>
-  clearTimeout(timers.ramtime); setTimeout(ram,0);
+  clearTimeout(timers.ramtime); setTimeout(ram);
 <?endif;?>
 <?if (strpos($show,'com')!==false):?>
-  clearTimeout(timers.comtime); setTimeout(com,0);
+  clearTimeout(timers.comtime); setTimeout(com);
 <?endif;?>
 <?if (strpos($show,'hdd')!==false):?>
-  clearTimeout(timers.hddtime); setTimeout(hdd,0);
+  clearTimeout(timers.hddtime); setTimeout(hdd);
 <?endif;?>
   setChart();
 }
@@ -206,21 +207,21 @@ function systemStats() {
   clearTimeout(timers.systime);
   if (graph>0) {
 <?if (strpos($show,'cpu')!==false):?>
-    setTimeout(cpu,0);
+    setTimeout(cpu);
 <?endif;?>
 <?if (strpos($show,'ram')!==false):?>
-    setTimeout(ram,0);
+    setTimeout(ram);
 <?endif;?>
 <?if (strpos($show,'com')!==false):?>
-    setTimeout(com,0);
+    setTimeout(com);
 <?endif;?>
 <?if (strpos($show,'hdd')!==false):?>
-    setTimeout(hdd,0);
+    setTimeout(hdd);
 <?endif;?>
   }
 }
 function diskStats() {
-  setTimeout(function(){sys(0);},0);
+  setTimeout(function(){sys(0);});
   if (graph>0) {
 <?if (strpos($show,'cpu')!==false):?>
     clearTimeout(timers.cputime);
@@ -407,17 +408,17 @@ $(function() {
     credits:{enabled:false}
   });
   syschart = new Highcharts.Chart({
-    chart:{renderTo:'sys',events:{load:sys},type:'bar',height:<?=$rows*$height?>,width:getWidth(true),zoomType:null},
+    chart:{renderTo:'sys',events:{load:sys},type:'bar',height:<?=($rows*$height)+75?>,width:getWidth(true),zoomType:null},
     colors:[{linearGradient:{x1:0,y1:0,x2:0,y2:1},stops:[[0,'#941C00'],[1,'#DE1100']]},{linearGradient:{x1:0,y1:0,x2:0,y2:1},stops:[[0,'#CE7C10'],[1,'#F0B400']]},{linearGradient:{x1:0,y1:0,x2:0,y2:1},stops:[[0,'#17BF0B'],[1,'#127A05']]},{linearGradient:{x1:0,y1:0,x2:0,y2:1},stops:[[0,'#D9D9D9'],[1,'#949494']]}],
     plotOptions:{series:{stacking:'normal',animation:{duration:1000},pointPadding:0.2,groupPadding:0,
     dataLabels:{enabled:true,color:'#fff',align:'<?=$text?>',verticalAlign:'top',x:<?=$offset?>,y:<?=$y?>,style:{opacity:0},formatter:function(){if (this.series.index==<?=$index?>) return this.total+' %';}}}},
     title:{text:_('Disk Usage')},
     subtitle:{text:_('utilization in percentage')},
 <?if ($cfg['size']):?>
-    xAxis:[{alternateGridColor:'rgba(255,255,255,.018)',type:'linear',labels:{style:{fontSize:'1.2rem'},y:5},lineWidth:0,tickWidth:0,categories:[<?=implode(',',$series)?>]},
-    {opposite:true,linkedTo:0,type:'linear',labels:{style:{fontSize:'1.2rem'},y:5},lineWidth:0,tickWidth:0,categories:[<?=implode(',',$sizes)?>]}],
+    xAxis:[{alternateGridColor:'rgba(255,255,255,.018)',type:'linear',labels:{style:{fontSize:'1.1rem'},y:5},lineWidth:0,tickWidth:0,categories:[<?=implode(',',$series)?>]},
+    {opposite:true,linkedTo:0,type:'linear',labels:{style:{fontSize:'1.1rem'},y:5},lineWidth:0,tickWidth:0,categories:[<?=implode(',',$sizes)?>]}],
 <?else:?>
-    xAxis:{alternateGridColor:'rgba(255,255,255,.018)',type:'linear',labels:{style:{fontSize:'1.2rem'},y:5},lineWidth:0,tickWidth:0,categories:[<?=implode(',',$series)?>]},
+    xAxis:{alternateGridColor:'rgba(255,255,255,.018)',type:'linear',labels:{style:{fontSize:'1.1rem'},y:5},lineWidth:0,tickWidth:0,categories:[<?=implode(',',$series)?>]},
 <?endif;?>
     yAxis:{gridLineDashStyle:'dash',labels:{y:15},max:100,plotLines:[
 <?if ($warning):?>
@@ -502,6 +503,7 @@ $(function() {
 <?endif;?>
 });
 </script>
+<?if ($arraysize>0):?>
 <div class="mybar whitebar leftbar" style="width:<?=$totalpercent?>%;"><span id="totalarray" class="mybar <?=bar_color($arraypercent)?> align-left" style="width:0"></span></div>
 <div class="mybar graybar rightbar" style="width:<?=$totaldisk?>%"></div>
 <div class="leftbar"><img src="<?="/plugins/$plugin/images"?>/array.png" class="left"><strong><?=my_scale($arraysize,$unit,-1,-1)." $unit"?></strong><br><small>_(Total Array Size)_</small></div>
@@ -516,6 +518,7 @@ $(function() {
 <?endif;?>
 <?if ($critical || $warning):?>
 <div class="rightbar"><span class="mybar greenbar inside"></span><strong>_(Below)_ <?=$warning?$display['warning']:$display['critical']?>%</strong><br><small>_(Normal Usage)_</small></div>
+<?endif;?>
 <?endif;?>
 <span id="sys" class="graph1"></span>
 <?if (!empty($cfg['stats']) && substr($cfg['stats'],0,5)!='Tasks'):?>

@@ -2,7 +2,7 @@ Menu="FileIntegrity"
 Title="File Integrity Settings"
 ---
 <?PHP
-/* Copyright 2012-2023, Bergware International.
+/* Copyright 2012-2025, Bergware International.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version 2,
@@ -33,6 +33,7 @@ $hash    = glob("/boot/config/plugins/$plugin/export/disk*.hash");
 function data_disks($disk) {
   return $disk['type']=='Data' && strpos($disk['status'],'_NP')===false;
 }
+
 function disk($key) {
   return substr($key,0,4)=='disk' ? $key : "";
 }
@@ -42,14 +43,6 @@ $disabled = version_compare($version, '6.1.7', '>=') ? "" : " disabled";
 
 exec("find /mnt/disk[0-9]* -type d -maxdepth 1 -mindepth 1 -exec basename {} \;|uniq|sort -u", $folders);
 ?>
-<style>
-input.thin{margin:1px;}
-span.running{background-color:#FF9E9E;}
-span.green-button{padding:1px 4px;margin-right:6px;border-radius:4px;border:1px solid #6FA239;}
-span.orange-button{padding:1px 4px;margin-right:6px;border-radius:4px;border:1px solid #FF9900;}
-span.red-button{padding:1px 4px;margin-right:6px;border-radius:4px;border:1px solid #CC0000;}
-.blue-text{color:#00529B;}
-</style>
 <script>
 function prepareWatch(form) {
   var exclude = '';
@@ -324,7 +317,9 @@ _(Error logging)_:
 > Disabling error logging will suppress log creation, but it is still possible to receive notifications.
 :end
 
-<table class='share_status fixed' style='margin:20px 0'><thead><td style='width:10%'>_(Verification tasks)_</td>
+<table class='share_status'>
+<thead>
+<td>_(Verification tasks)_</td>
 <?
 $i = 1;
 $data = array_filter($disks,'data_disks');
@@ -338,12 +333,13 @@ echo "</thead><tbody>";
 foreach ($data as $disk) {
   $name = $disk['name'];
   echo "<tr><td>"._(my_disk($name),3)."</td>";
-  for ($n = 1; $n < $i; $n++) echo "<td style='text-align:center'><span class='$name t$n'><input type='checkbox' name='$name-$n' class='$name t$n thin' onclick='updateMatrix(this.checked,\"$name\",\"t$n\")'".($cfg["$name-$n"]=='on'?' checked':'')."></span></td>";
+  for ($n = 1; $n < $i; $n++) echo "<td><span class='$name t$n'><input type='checkbox' name='$name-$n' class='$name t$n thin' onclick='updateMatrix(this.checked,\"$name\",\"t$n\")'".($cfg["$name-$n"]=='on'?' checked':'')."></span></td>";
   echo str_repeat("<td></td>", $x);
   echo "</tr>\n";
 }
 ?>
-</tbody></table>
+</tbody>
+</table>
 
 <input type="submit" name="#default" value="_(Default)_" onclick="$('input[class^=disk]').prop('checked',false)">
 : <input type="submit" name="#apply" value="_(Apply)_"><input type="button" value="_(Done)_" onclick="done()">
