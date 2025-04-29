@@ -3,11 +3,11 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "dynamix.s3.sleep">
 <!ENTITY author    "Bergware">
-<!ENTITY version   "2024.02.06">
+<!ENTITY version   "2025.04.29">
 <!ENTITY launch    "Settings/SleepSettings">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/chriss158/dynamix/master/unRAIDv6/&name;.plg">
 <!ENTITY source    "/boot/config/plugins/&name;/&name;">
-<!ENTITY MD5       "57221d0b5d13b650a8d7a54c9fa42aa3">
+<!ENTITY MD5       "81601dea72823a0b77970724e2ec5a1a">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.9.0">
@@ -16,6 +16,9 @@
 ##&name;
 
 ###&version;
+- Add Low traffic 2 (25 kb/s) and Medium traffic 1 (50 kb/s) to Network idle threshold option
+
+###024.02.06
 - Fix detection of drive activity after shutdown/standby
 
 ###2024.02.05

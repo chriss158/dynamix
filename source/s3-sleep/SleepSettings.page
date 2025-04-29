@@ -220,8 +220,10 @@ _(Ethernet interface)_:
 _(Network idle threshold)_:
 : <select name="idle">
   <?=mk_option($cfg['idle'], "0", _('Silent traffic')." [0 kb/s]")?>
-  <?=mk_option($cfg['idle'], "1250", _('Low traffic')." [10 kb/s]")?>
-  <?=mk_option($cfg['idle'], "12500", _('Medium traffic')." [100 kb/s]")?>
+  <?=mk_option($cfg['idle'], "1250", _('Low traffic 1')." [10 kb/s]")?>
+  <?=mk_option($cfg['idle'], "3125 ", _('Low traffic 2')." [25 kb/s]")?>
+  <?=mk_option($cfg['idle'], "6250", _('Medium traffic 1')." [50 kb/s]")?>
+  <?=mk_option($cfg['idle'], "12500", _('Medium traffic 2')." [100 kb/s]")?>
   <?=mk_option($cfg['idle'], "62500", _('High traffic')." [500 kb/s]")?>
   <?=mk_option($cfg['idle'], "125000", _('Mega traffic')." [1 Mb/s]")?>
   </select>
