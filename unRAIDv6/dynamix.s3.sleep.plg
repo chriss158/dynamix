@@ -18,7 +18,7 @@
 ###&version;
 - Add Low traffic 2 (25 kb/s) and Medium traffic 1 (50 kb/s) to Network idle threshold option
 
-###024.02.06
+###2024.02.06
 - Fix detection of drive activity after shutdown/standby
 
 ###2024.02.05
